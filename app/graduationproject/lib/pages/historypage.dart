@@ -6,21 +6,20 @@ class Historypage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Row(
           children: [
-            Image.asset('icons/history.png',width: 20,height: 20,color: Colors.blue,),
-            SizedBox(width: 10,),
-            Text('History',style: TextStyle(fontSize: 18),),
+            Icon(Icons.history,color: Colors.blue,),
+            //Image.asset('assets/icons/history.png',width: 20,height: 20,color: Colors.blue,),
+            const SizedBox(width: 10,),
+            Text('History',style: Theme.of(context).textTheme.titleLarge,),
           ],
         ),
-        backgroundColor:Colors.white,
         bottom: PreferredSize(
         preferredSize: Size.fromHeight(2),
         child: Container(
-          color: Colors.grey.shade200,
-          height: 1.5,
+          color:Theme.of(context).colorScheme.outline,
+          height: 1,
           ),
         ),
       )

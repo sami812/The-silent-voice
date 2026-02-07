@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'page/startpage.dart';
-import 'page/profilepage.dart';
-import 'page/historypage.dart';
-import 'themes/theme.dart';
+import 'themes/themedata.dart';
+import 'pages/startpage.dart';
+import 'pages/profilepage.dart';
+import 'pages/historypage.dart';
 
 // note to other contributer
 // the "///" well get add automaticly to the documentation
@@ -13,31 +13,39 @@ import 'themes/theme.dart';
 // '$ flutter pub rename'
 
 /// # Main page
-/// - contain all the main class `MyAPP`
+/// - contain all the main class `TheSilentVoice`
 /// - contain the navigation bar class  'bottomNav'
 
 void main() {
-  runApp(const MyApp());
+  runApp(const TheSilentVoice());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class TheSilentVoice extends StatefulWidget {
+  const TheSilentVoice({super.key});
+  static _TheSilentVoiceState of(BuildContext context) =>
+      context.findAncestorStateOfType<_TheSilentVoiceState>()!;
+  @override
+  State<TheSilentVoice> createState() => _TheSilentVoiceState();
+}
 
+class _TheSilentVoiceState extends State<TheSilentVoice> {
+  ThemeMode _themeMode = ThemeMode.light;
+  toggleTheme(bool isDark) {
+    setState(() {
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-
       /// ## App Theme
       /// - by defualt the app should follow the phone theme
-      /// - the value of all the theme is stored at the `themes/theme.dart`
-      /// - we should add a way to over ride this theme in the profile page
-      theme: lightMode,
-      darkTheme: darkMode,
-      // uncommet one of them at a time
-      //themeMode: ThemeMode.system, // follow system theme
-      //themeMode: ThemeMode.light, // just for testing for now
-      themeMode: ThemeMode.dark, // just for testing for now
+      /// - the value of all the theme is stored at the `themes/themedata.dart`
+      /// - we should add a way to over ride this theme in the profile page => done
+      theme: AppThemeData.light, // Light theme
+      darkTheme: AppThemeData.dark, // Dark theme
+      themeMode: _themeMode, // follow switch value in the  profile page
       home: BottomNav(),
     );
   }
@@ -51,7 +59,6 @@ class MyApp extends StatelessWidget {
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
-
   @override
   State<BottomNav> createState() => _BottomNavState();
 }
@@ -66,8 +73,7 @@ class BottomNav extends StatefulWidget {
 
 class _BottomNavState extends State<BottomNav> {
   int selectPage = 1;
-  List<Widget> pages = [Historypage(), StartPage(), Profilepage()];
-
+  List<Widget> pages = [Historypage(),StartPage(),Profilepage()];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,12 +81,7 @@ class _BottomNavState extends State<BottomNav> {
       bottomNavigationBar: Container(
         height: 100,
         decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: Theme.of(context).colorScheme.outline,
-              width: 1.5,
-            ),
-          ),
+          border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1.5)),
         ),
         child: BottomNavigationBar(
           onTap: (val) {
@@ -88,38 +89,27 @@ class _BottomNavState extends State<BottomNav> {
               selectPage = val;
             });
           },
-          backgroundColor: Theme.of(context).colorScheme.surface,
           currentIndex: selectPage,
-          selectedItemColor: Theme.of(context).colorScheme.primary,
-          unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
-          selectedLabelStyle: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontFamily: 'OpenSans',
-          ),
-          unselectedLabelStyle: TextStyle(
-            fontWeight: FontWeight.w300,
-            fontFamily: 'OpenSans',
-          ),
+          selectedItemColor: Colors.blue,
+          unselectedItemColor: Colors.grey,
+          selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
+          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w300),
           items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.history_rounded, size: 30),
+              icon:  Icon(Icons.history_rounded, size: 30),
+              // icon: Image.asset(
+              //   'assets/icons/history.png',
+              //   width: 25,
+              //   height: 25,
+              //   color: Colors.grey,
+              // ),
+              // activeIcon: Image.asset(
+              //   'assets/icons/history.png',
+              //   width: 25,
+              //   height: 25,
+              //   color: Colors.blue,
+              // ),
               label: "History",
-              // while the other icon is closer to the prototype
-              // i think that it's not worth cluttering the code base
-              // i don't have strong opinion about it so feel free to change it back
-              //              icon: Image.asset(
-              //                'icons/history.png',
-              //                width: 25,
-              //                height: 25,
-              //                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              //              ),
-              //              activeIcon: Image.asset(
-              //                'icons/history.png',
-              //                width: 25,
-              //                height: 25,
-              //                color: Theme.of(context).colorScheme.primary,
-              //              ),
-              //              label: "History",
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined, size: 30),
