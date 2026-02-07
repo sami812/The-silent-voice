@@ -7,7 +7,7 @@ class Profilepage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(child: Text('Profile page'))
+      body: Center(child: Text('Profile page')),
     );
   }
 }

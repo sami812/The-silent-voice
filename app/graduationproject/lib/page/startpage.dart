@@ -12,7 +12,6 @@ class StartPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-
             Container(
               width: 90,
               height: 90,
@@ -22,15 +21,15 @@ class StartPage extends StatelessWidget {
                 boxShadow: [
                   BoxShadow(
                     color: Colors.blue.shade200,
-                    offset: Offset(5,5),
+                    offset: Offset(5, 5),
                     blurRadius: 10,
                   ),
                   BoxShadow(
                     color: Colors.blue.shade200,
-                    offset: Offset(-5,-5),
+                    offset: Offset(-5, -5),
                     blurRadius: 20,
-                  )
-                ]
+                  ),
+                ],
               ),
               child: Center(
                 child: Image.asset(
@@ -64,24 +63,39 @@ class StartPage extends StatelessWidget {
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(50),
-                gradient: LinearGradient(colors: [const Color.fromARGB(255, 16, 103, 252),const Color.fromARGB(255, 20, 173, 244)],begin: Alignment.topRight,end: Alignment.bottomLeft),
+                gradient: LinearGradient(
+                  colors: [
+                    const Color.fromARGB(255, 16, 103, 252),
+                    const Color.fromARGB(255, 20, 173, 244),
+                  ],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.blue.shade200,
-                    offset: Offset(2,2),
+                    offset: Offset(2, 2),
                     blurRadius: 10,
                   ),
                   BoxShadow(
                     color: Colors.blue.shade200,
-                    offset: Offset(-2,-2),
+                    offset: Offset(-2, -2),
                     blurRadius: 20,
-                  )
+                  ),
                 ],
               ),
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(padding: EdgeInsets.zero,elevation: 0,backgroundColor: Colors.transparent,minimumSize: Size(300,70),),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  minimumSize: Size(300, 70),
+                ),
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => Conversationpage(),),);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => Conversationpage()),
+                  );
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -91,7 +105,6 @@ class StartPage extends StatelessWidget {
                       width: 20,
                       height: 20,
                       color: Colors.white,
-                      
                     ),
                     SizedBox(width: 10),
                     Text(
@@ -99,7 +112,7 @@ class StartPage extends StatelessWidget {
                       style: TextStyle(fontSize: 20, color: Colors.white),
                     ),
                   ],
-                )
+                ),
               ),
             ),
 
@@ -112,10 +125,11 @@ class StartPage extends StatelessWidget {
             //     style: TextStyle(fontSize: 18, color: Colors.blue),
             //   ),
             // ),
-
             SizedBox(height: 40),
 
-            Text('Begin a communication session',textAlign: TextAlign.center,
+            Text(
+              'Begin a communication session',
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 18,
                 color: Color.fromARGB(255, 79, 75, 75),
@@ -129,7 +143,6 @@ class StartPage extends StatelessWidget {
               children: [
                 Column(
                   children: [
-
                     Container(
                       height: 50,
                       width: 50,
@@ -144,17 +157,15 @@ class StartPage extends StatelessWidget {
                           width: 40,
                           height: 40,
                         ),
-                      ),  
+                      ),
                     ),
 
-                    Text('Text',style: TextStyle(fontSize: 15,)),
-
+                    Text('Text', style: TextStyle(fontSize: 15)),
                   ],
                 ),
 
                 Column(
                   children: [
-
                     Container(
                       height: 50,
                       width: 50,
@@ -172,7 +183,7 @@ class StartPage extends StatelessWidget {
                       ),
                     ),
 
-                    Text('Speech',style: TextStyle(fontSize: 15,)),
+                    Text('Speech', style: TextStyle(fontSize: 15)),
                   ],
                 ),
 
@@ -194,8 +205,8 @@ class StartPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    
-                    Text('Guided',style: TextStyle(fontSize: 15,)),
+
+                    Text('Guided', style: TextStyle(fontSize: 15)),
                   ],
                 ),
               ],
