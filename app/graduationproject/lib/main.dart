@@ -28,6 +28,7 @@ class TheSilentVoice extends StatefulWidget {
   State<TheSilentVoice> createState() => _TheSilentVoiceState();
 }
 
+/// ## theme switch
 class _TheSilentVoiceState extends State<TheSilentVoice> {
   ThemeMode _themeMode = ThemeMode.light;
   toggleTheme(bool isDark) {
@@ -35,14 +36,15 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
       _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+
       /// ## App Theme
       /// - by defualt the app should follow the phone theme
       /// - the value of all the theme is stored at the `themes/themedata.dart`
-      /// - we should add a way to over ride this theme in the profile page => done
       theme: AppThemeData.light, // Light theme
       darkTheme: AppThemeData.dark, // Dark theme
       themeMode: _themeMode, // follow switch value in the  profile page
@@ -73,7 +75,7 @@ class BottomNav extends StatefulWidget {
 
 class _BottomNavState extends State<BottomNav> {
   int selectPage = 1;
-  List<Widget> pages = [Historypage(),StartPage(),Profilepage()];
+  List<Widget> pages = [Historypage(), StartPage(), Profilepage()];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,7 +83,12 @@ class _BottomNavState extends State<BottomNav> {
       bottomNavigationBar: Container(
         height: 100,
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1.5)),
+          border: Border(
+            top: BorderSide(
+              color: Theme.of(context).colorScheme.outline,
+              width: 1.5,
+            ),
+          ),
         ),
         child: BottomNavigationBar(
           onTap: (val) {
@@ -96,19 +103,7 @@ class _BottomNavState extends State<BottomNav> {
           unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w300),
           items: [
             BottomNavigationBarItem(
-              icon:  Icon(Icons.history_rounded, size: 30),
-              // icon: Image.asset(
-              //   'assets/icons/history.png',
-              //   width: 25,
-              //   height: 25,
-              //   color: Colors.grey,
-              // ),
-              // activeIcon: Image.asset(
-              //   'assets/icons/history.png',
-              //   width: 25,
-              //   height: 25,
-              //   color: Colors.blue,
-              // ),
+              icon: Icon(Icons.history_rounded, size: 30),
               label: "History",
             ),
             BottomNavigationBarItem(
