@@ -1,35 +1,29 @@
 import 'package:flutter/material.dart';
 import 'conversationpage.dart';
 
+/// # Start Page
+/// `StartPage` is the main landing page of the app. It shows the app logo, title, description,
+/// main features, and a button to start a conversation.
+/// - Features include "Text", "Speech", and "Guided" communication methods.
 class StartPage extends StatelessWidget {
   const StartPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      /// ### Body
+      /// Main content of the Start Page
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-
+            /// #### App Logo Container
             Container(
               width: 90,
               height: 90,
               decoration: BoxDecoration(
                 color: Colors.blue,
                 borderRadius: BorderRadius.circular(24),
-                // boxShadow: [
-                //   BoxShadow(
-                //     color: Colors.blue.shade200,
-                //     offset: Offset(5,5),
-                //     blurRadius: 10,
-                //   ),
-                //   BoxShadow(
-                //     color: Colors.blue.shade200,
-                //     offset: Offset(-5,-5),
-                //     blurRadius: 20,
-                //   )
-                // ]
               ),
               child: Center(
                 child: Image.asset(
@@ -42,12 +36,13 @@ class StartPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-
+            /// #### App Title
             Text(
               'The silent voice',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 20),
+            /// #### App Description
             Text(
               'Bridge communication gaps with text,\n'
               'speech, and guided conversations',
@@ -56,23 +51,11 @@ class StartPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 80),
-
+            /// #### Start Conversation Button
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(50),
                 gradient: LinearGradient(colors: [const Color.fromARGB(255, 16, 103, 252),const Color.fromARGB(255, 20, 173, 244)],begin: Alignment.topRight,end: Alignment.bottomLeft),
-                // boxShadow: [
-                //   BoxShadow(
-                //     color: Colors.blue.shade200,
-                //     offset: Offset(2,2),
-                //     blurRadius: 10,
-                //   ),
-                //   BoxShadow(
-                //     color: Colors.blue.shade200,
-                //     offset: Offset(-2,-2),
-                //     blurRadius: 20,
-                //   )
-                // ],
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(padding: EdgeInsets.zero,elevation: 0,backgroundColor: Colors.transparent,minimumSize: Size(300,70),),
@@ -99,27 +82,18 @@ class StartPage extends StatelessWidget {
               ),
             ),
 
-            // SizedBox(height: 10),
-            // ElevatedButton(
-            //   style: ElevatedButton.styleFrom(backgroundColor: Colors.white,minimumSize: Size(250,40),),
-            //   onPressed: () {},
-            //   child: Text(
-            //     'Sign Up',
-            //     style: TextStyle(fontSize: 18, color: Colors.blue),
-            //   ),
-            // ),
-
             const SizedBox(height: 40),
-
+            /// #### Subtext
             Text('Begin a communication session',textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
 
             const SizedBox(height: 80),
-
+            /// #### Features Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                /// ##### Text Feature
                 Column(
                   children: [
 
@@ -144,7 +118,7 @@ class StartPage extends StatelessWidget {
 
                   ],
                 ),
-
+                /// ##### Speech Feature
                 Column(
                   children: [
 
@@ -168,7 +142,7 @@ class StartPage extends StatelessWidget {
                     Text('Speech',style: Theme.of(context).textTheme.bodySmall,),
                   ],
                 ),
-
+                /// ##### Guided Feature
                 Column(
                   children: [
                     Container(

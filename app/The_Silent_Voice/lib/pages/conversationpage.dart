@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:graduationproject/components/live_subtitle_window.dart';
-import 'package:graduationproject/components/responce_sugestion.dart';
-import 'package:graduationproject/components/utility_navigation_bar.dart';
+import 'package:the_silent_voice/components/live_subtitle_window.dart';
+import 'package:the_silent_voice/components/responce_sugestion.dart';
+import 'package:the_silent_voice/components/utility_navigation_bar.dart';
 
 class Conversationpage extends StatelessWidget {
   const Conversationpage({super.key});

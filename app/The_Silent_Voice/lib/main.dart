@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'themes/themedata.dart';
 import 'pages/startpage.dart';
@@ -15,13 +16,26 @@ import 'pages/historypage.dart';
 /// # Main page
 /// - contain all the main class `TheSilentVoice`
 /// - contain the navigation bar class  'bottomNav'
+/// - SharedPreferences : saves data on the device's internal storage, so the info stays put even if the user closes the app or restarts their phone. Its allows the application to remember the user's selected theme (Light or Dark mode) even after the app is closed and reopened.
 
-void main() {
-  runApp(const TheSilentVoice());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final switched = prefs.getBool('isDarkMode') ?? false;
+
+  runApp(
+    TheSilentVoice(
+      switched: switched,
+    ),
+  );
 }
 
 class TheSilentVoice extends StatefulWidget {
-  const TheSilentVoice({super.key});
+  final bool switched;
+  const TheSilentVoice({
+    super.key,
+    required this.switched,
+  });
   static _TheSilentVoiceState of(BuildContext context) =>
       context.findAncestorStateOfType<_TheSilentVoiceState>()!;
   @override
@@ -30,8 +44,18 @@ class TheSilentVoice extends StatefulWidget {
 
 /// ## theme switch
 class _TheSilentVoiceState extends State<TheSilentVoice> {
-  ThemeMode _themeMode = ThemeMode.light;
-  toggleTheme(bool isDark) {
+  late ThemeMode _themeMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeMode = widget.switched ? ThemeMode.dark : ThemeMode.light;
+  }
+
+  Future<void> toggleTheme(bool isDark) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', isDark);
+
     setState(() {
       _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
     });
@@ -45,6 +69,7 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
       /// ## App Theme
       /// - by defualt the app should follow the phone theme
       /// - the value of all the theme is stored at the `themes/themedata.dart`
+      /// - we should add a way to over ride this theme in the profile page => done
       theme: AppThemeData.light, // Light theme
       darkTheme: AppThemeData.dark, // Dark theme
       themeMode: _themeMode, // follow switch value in the  profile page
@@ -60,7 +85,7 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
 /// - `History Page`, `Start Page`, `Profile Page`
 
 class BottomNav extends StatefulWidget {
-  const BottomNav({super.key});
+  const BottomNav({super.key,});
   @override
   State<BottomNav> createState() => _BottomNavState();
 }
