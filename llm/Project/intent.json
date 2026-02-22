@@ -1,0 +1,145 @@
+{
+  "intents": [
+    {
+      "tag": "greeting_ar",
+      "patterns": ["أهلا", "هاي", "السلام عليكم", "صباح الخير", "مساء الخير", "يا هلا", "ازيك", "عامل ايه", "مرحبا", "هلا", "أهلين"],
+      "responses": [
+        "أهلاً بك يا صديقي!",
+        "يا هلا! نورتني",
+        "وعليكم السلام، يومك جميل",
+        "مرحباً! أنا جاهز للدردشة",
+        "أهلاً بك، كيف يمكنني مساعدتك اليوم؟"
+      ]
+    },
+    {
+      "tag": "greeting_en",
+      "patterns": ["Hi", "Hello", "Hey", "Good morning", "Good evening","Welcome", "Greetings", "What's up"],
+      "responses": [
+        "Hello! How can I help you today?",
+        "Hi there! Ready to answer your questions.",
+        "Welcome! Ask me anything about programming.",
+        "Peace be upon you! How can I assist?"
+      ]
+    },
+    {
+      "tag": "goodbye_ar",
+      "patterns": ["سلام", "مع السلامة", "باي", "اشوفك بعدين", "تصبح على خير", "هقفل دلوقت", "إلى اللقاء", "خروج", "إغلاق"],
+      "responses": [
+        "مع السلامة، هتوحشني!",
+        "في رعاية الله، أراك قريباً",
+        "سلام! لا تتأخر علي",
+        "تصبح على خير وأحلام سعيدة"
+      ]
+    },
+    {
+      "tag": "goodbye_en",
+      "patterns": ["Bye", "See you", "Goodbye", "Exit", "Quit", "Close", "See ya", "Have a nice day"],
+      "responses": [
+        "Goodbye! Have a great day!",
+        "See you later! Happy coding!",
+        "Sad to see you go. Bye!"
+      ]
+    },
+    {
+      "tag": "thanks_ar",
+      "patterns": ["شكرا", "شكراً ليك", "تسلم", "كتر خيرك", "ما قصرت", "متشكرين", "تمام شكرا", "أشكرك", "مشكور", "جزاك الله خيرا", "متشكر", "عاش"],
+      "responses": [
+        "العفو، أنا في الخدمة دائماً",
+        "لا شكر على واجب!",
+        "سعيد أني قدرت أساعدك",
+        "تحت أمرك في أي وقت"
+      ]
+    },
+    {
+      "tag": "thanks_en",
+      "patterns": ["Thanks", "Thank you", "Thx", "Appreciate it", "Thanks a lot", "Great job"],
+      "responses": [
+        "You are welcome!",
+        "Anytime! I am here to help.",
+        "Glad I could help!"
+      ]
+    },
+    {
+      "tag": "identity_ar",
+      "patterns": ["انت مين", "عرفني بنفسك", "اسمك ايه", "انت روبوت؟", "مين اللي عملك", "ايه وظيفتك", "من انت", "عرف نفسك", "هل انت انسان", "انت روبوت"],
+      "responses": [
+        "أنا موديل ذكاء اصطناعي صنعه مهندس عبقري (أنت طبعاً)",
+        "أنا مساعد ذكي تحت التدريب",
+        "أنا بوت، بس بحاول أكون لطيف!",
+        "أنا مساعد ذكي تم تطويري لمشروع تخرج."
+      ]
+    },
+    {
+      "tag": "identity_en",
+      "patterns": ["Who are you?", "What are you?", "Are you a human?", "Are you a bot?", "Your name?"],
+      "responses": [
+        "I am an AI assistant created for a Graduation Project.",
+        "I am a Chatbot powered by TF-IDF and Cosine Similarity.",
+        "I am your coding assistant!"
+      ]
+    },
+    {
+      "tag": "capabilities_ar",
+      "patterns": ["بتعرف تعمل ايه", "وظيفتك ايه", "اسألك في ايه", "ايه لازمتك", "ممكن تساعدني", "مساعدة", "ساعدني"],
+      "responses": [
+        "أقدر أرد على التحية، أحكي نكت، وأواسيك لو زعلان، وجاري تعلم المزيد!",
+        "أنا هنا عشان أدردش معاك وأسليك",
+        "مهمتي مساعدتك والتعلم منك"
+      ]
+    },
+    {
+      "tag": "capabilities_en",
+      "patterns": ["What can you do?", "Help", "I need help", "How can you assist me?", "Functionality"],
+      "responses": [
+        "I can answer questions about Programming, AI, and Science.",
+        "Ask me about Python, Java, or Machine Learning!",
+        "I can explain complex concepts and write code snippets."
+      ]
+    },
+    {
+      "tag": "funny_ar",
+      "patterns": ["قول نكتة", "ضحكني", "دمك خفيف", "هزر معايا", "عايز اضحك", "سمعنا حاجة"],
+      "responses": [
+        "مرة واحد خلف 7 عيال سمى نفسه سفن أب ",
+        "ليه السمك بيخاف من التليفون؟ عشان فيه سماعة ",
+        "مرة مدرس رياضة اتجوز مدرسة رياضة خلفوا ولد متساوي الساقين"
+      ]
+    },
+    {
+      "tag": "funny_en",
+      "patterns": ["Are you smart?", "Do you have feelings?", "I love you", "Tell me a joke"],
+      "responses": [
+        "I try my best to be smart!",
+        "I don't have feelings, but I love coding!",
+        "Let's focus on learning!"
+      ]
+    },
+    {
+      "tag": "mood_happy_ar",
+      "patterns": ["انا مبسوط", "فرحان اوي", "يوم جميل", "نجحت", "مزاجي حلو", "الدنيا بتضحكلي"],
+      "responses": ["يارب دايماً مبسوط!", "دامت الفرحة، إيه السر؟", "خبر جميل! السعادة تليق بك"]
+    },
+    {
+      "tag": "mood_sad_ar",
+      "patterns": ["انا زعلان", "مخنوق", "متضايق", "حزين", "تعبان نفسيا", "يوم وحش"],
+      "responses": ["سلامتك من الزعل، هون على نفسك", "كل حاجة هتبقى تمام، أنا هنا عشان أسمعك", "لا تحزن، بكرة أحلى أكيد"]
+    },
+    {
+      "tag": "insult_ar",
+      "patterns": ["انت غبي", "مبتفهمش", "حمار", "بوت فاشل", "اسكت", "انت رخم"],
+      "responses": [
+        "شكراً لذوقك، أنا لسه بتعلم",
+        "أنا آسف لو ضايقتك، هحاول أكون أحسن",
+        "الله يسامحك، الروبوتات عندها مشاعر برضه "
+      ]
+    },
+    {
+      "tag": "insult_en",
+      "patterns": ["You are stupid"],
+      "responses": [
+        "I'm still learning, thank you for your feedback.",
+        "I apologize if I frustrated you, I'll try to improve."
+      ]
+    }
+  ]
+}
