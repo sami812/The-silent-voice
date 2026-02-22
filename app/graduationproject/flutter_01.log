@@ -1,0 +1,105 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter run
+
+## exception
+
+ProcessException: ProcessException: No such file or directory
+  Command: /usr/bin/chromium http://127.0.0.1:33425/Fx6RpoOVbAI=/devtools/?uri=ws://127.0.0.1:33425/Fx6RpoOVbAI=/ws
+
+```
+#0      _ProcessImpl._start (dart:io-patch/process_patch.dart:421:33)
+#1      Process.start (dart:io-patch/process_patch.dart:42:20)
+#2      Chrome._startProcess (package:browser_launcher/src/chrome.dart:177:26)
+#3      Chrome.start (package:browser_launcher/src/chrome.dart:170:13)
+#4      DartDevelopmentServiceLocalOperationsMixin.launchDevToolsInBrowser (package:flutter_tools/src/base/dds.dart:167:22)
+#5      TerminalHandler._commonTerminalInputHandler.<anonymous closure> (package:flutter_tools/src/resident_runner.dart:1808:46)
+#6      Iterable.fold (dart:core/iterable.dart:427:44)
+#7      TerminalHandler._commonTerminalInputHandler (package:flutter_tools/src/resident_runner.dart:1805:16)
+#8      TerminalHandler.processTerminalInput (package:flutter_tools/src/resident_runner.dart:1829:13)
+#9      _rootRunUnary (dart:async/zone.dart:1538:47)
+#10     _CustomZone.runUnary (dart:async/zone.dart:1429:19)
+#11     _CustomZone.runUnaryGuarded (dart:async/zone.dart:1329:7)
+#12     _BufferingStreamSubscription._sendData (dart:async/stream_impl.dart:381:11)
+#13     _BufferingStreamSubscription._add (dart:async/stream_impl.dart:312:7)
+#14     _SyncBroadcastStreamController._sendData (dart:async/broadcast_stream_controller.dart:385:25)
+#15     _BroadcastStreamController.add (dart:async/broadcast_stream_controller.dart:257:5)
+#16     _AsBroadcastStreamController.add (dart:async/broadcast_stream_controller.dart:488:11)
+#17     _rootRunUnary (dart:async/zone.dart:1538:47)
+#18     _CustomZone.runUnary (dart:async/zone.dart:1429:19)
+#19     _CustomZone.runUnaryGuarded (dart:async/zone.dart:1329:7)
+#20     _BufferingStreamSubscription._sendData (dart:async/stream_impl.dart:381:11)
+#21     _BufferingStreamSubscription._add (dart:async/stream_impl.dart:312:7)
+#22     _SinkTransformerStreamSubscription._add (dart:async/stream_transformers.dart:67:11)
+#23     _EventSinkWrapper.add (dart:async/stream_transformers.dart:13:11)
+#24     _StringAdapterSink.add (dart:convert/string_conversion.dart:228:11)
+#25     _StringAdapterSink.addSlice (dart:convert/string_conversion.dart:233:7)
+#26     _Utf8ConversionSink.addSlice (dart:convert/string_conversion.dart:313:20)
+#27     _ErrorHandlingAsciiDecoderSink.addSlice (dart:convert/ascii.dart:285:17)
+#28     _ErrorHandlingAsciiDecoderSink.add (dart:convert/ascii.dart:271:5)
+#29     _ConverterStreamEventSink.add (dart:convert/chunked_conversion.dart:70:18)
+#30     _SinkTransformerStreamSubscription._handleData (dart:async/stream_transformers.dart:115:24)
+#31     _rootRunUnary (dart:async/zone.dart:1538:47)
+#32     _CustomZone.runUnary (dart:async/zone.dart:1429:19)
+#33     _CustomZone.runUnaryGuarded (dart:async/zone.dart:1329:7)
+#34     _BufferingStreamSubscription._sendData (dart:async/stream_impl.dart:381:11)
+#35     _BufferingStreamSubscription._add (dart:async/stream_impl.dart:312:7)
+#36     _SyncStreamControllerDispatch._sendData (dart:async/stream_controller.dart:798:19)
+#37     _StreamController._add (dart:async/stream_controller.dart:663:7)
+#38     _StreamController.add (dart:async/stream_controller.dart:618:5)
+#39     _Socket._onData (dart:io-patch/socket_patch.dart:2880:41)
+#40     _rootRunUnary (dart:async/zone.dart:1546:13)
+#41     _CustomZone.runUnary (dart:async/zone.dart:1429:19)
+#42     _CustomZone.runUnaryGuarded (dart:async/zone.dart:1329:7)
+#43     _BufferingStreamSubscription._sendData (dart:async/stream_impl.dart:381:11)
+#44     _BufferingStreamSubscription._add (dart:async/stream_impl.dart:312:7)
+#45     _SyncStreamControllerDispatch._sendData (dart:async/stream_controller.dart:798:19)
+#46     _StreamController._add (dart:async/stream_controller.dart:663:7)
+#47     _StreamController.add (dart:async/stream_controller.dart:618:5)
+#48     new _RawSocket.<anonymous closure> (dart:io-patch/socket_patch.dart:2315:31)
+#49     _NativeSocket.issueReadEvent.issue (dart:io-patch/socket_patch.dart:1655:14)
+#50     _microtaskLoop (dart:async/schedule_microtask.dart:40:35)
+#51     _startMicrotaskLoop (dart:async/schedule_microtask.dart:49:5)
+#52     _runPendingImmediateCallback (dart:isolate-patch/isolate_patch.dart:127:13)
+#53     _RawReceivePort._handleMessage (dart:isolate-patch/isolate_patch.dart:194:5)
+```
+
+## flutter doctor
+
+```
+[32m[✓][39m Flutter (Channel stable, 3.38.9, on Arch Linux 6.12.68-1-lts, locale en_US.UTF-8) [23ms]
+    [32m•[39m Flutter version 3.38.9 on channel stable at /home/sami/flutter
+    [32m•[39m Upstream repository https://github.com/flutter/flutter.git
+    [32m•[39m Framework revision 67323de285 (11 days ago), 2026-01-28 13:43:12 -0800
+    [32m•[39m Engine revision 587c18f873
+    [32m•[39m Dart version 3.10.8
+    [32m•[39m DevTools version 2.51.1
+    [32m•[39m Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios,
+      cli-animations, enable-native-assets, omit-legacy-version-file, enable-lldb-debugging
+
+[31m[✗][39m Android toolchain - develop for Android devices [9ms]
+    [31m✗[39m ANDROID_HOME = /home/sami/Android/Sdk
+      but Android SDK not found at this location.
+
+[31m[✗][39m Chrome - develop for the web (Cannot find Chrome executable at /usr/bin/chromium) [4ms]
+    [33m![39m /usr/bin/chromium is not executable.
+
+[32m[✓][39m Linux toolchain - develop for Linux desktop [145ms]
+    [32m•[39m clang version 21.1.6
+    [32m•[39m cmake version 4.2.3
+    [32m•[39m ninja version 1.13.2
+    [32m•[39m pkg-config version 2.5.1
+    [33m![39m Unable to access driver information using 'eglinfo'.
+      It is likely available from your distribution (e.g.: apt install mesa-utils)
+
+[32m[✓][39m Connected device (1 available) [7ms]
+    [32m•[39m Linux (desktop) • linux • linux-x64 • Arch Linux 6.12.68-1-lts
+
+[32m[✓][39m Network resources [290ms]
+    [32m•[39m All expected network resources are available.
+
+[33m![39m Doctor found issues in 2 categories.
+```

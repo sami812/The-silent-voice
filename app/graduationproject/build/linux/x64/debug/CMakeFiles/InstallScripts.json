@@ -1,0 +1,9 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/sami/project/graduation-project/The-silent-voice/app/graduationproject/build/linux/x64/debug/cmake_install.cmake",
+		"/home/sami/project/graduation-project/The-silent-voice/app/graduationproject/build/linux/x64/debug/flutter/cmake_install.cmake",
+		"/home/sami/project/graduation-project/The-silent-voice/app/graduationproject/build/linux/x64/debug/runner/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
