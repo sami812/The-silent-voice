@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'conversationpage.dart';
+import 'conversation_page.dart';
 
 /// # Start Page
 /// `StartPage` is the main landing page of the app. It shows the app logo, title, description,
@@ -36,12 +36,14 @@ class StartPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
+
             /// #### App Title
             Text(
               'The silent voice',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 20),
+
             /// #### App Description
             Text(
               'Bridge communication gaps with text,\n'
@@ -51,16 +53,32 @@ class StartPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 80),
+
             /// #### Start Conversation Button
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(50),
-                gradient: LinearGradient(colors: [const Color.fromARGB(255, 16, 103, 252),const Color.fromARGB(255, 20, 173, 244)],begin: Alignment.topRight,end: Alignment.bottomLeft),
+                gradient: LinearGradient(
+                  colors: [
+                    const Color.fromARGB(255, 16, 103, 252),
+                    const Color.fromARGB(255, 20, 173, 244),
+                  ],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                ),
               ),
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(padding: EdgeInsets.zero,elevation: 0,backgroundColor: Colors.transparent,minimumSize: Size(300,70),),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  minimumSize: Size(300, 70),
+                ),
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => Conversationpage(),),);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ConversationPage()),
+                  );
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -70,7 +88,6 @@ class StartPage extends StatelessWidget {
                       width: 20,
                       height: 20,
                       color: Colors.white,
-                      
                     ),
                     const SizedBox(width: 10),
                     Text(
@@ -78,17 +95,21 @@ class StartPage extends StatelessWidget {
                       style: TextStyle(fontSize: 20, color: Colors.white),
                     ),
                   ],
-                )
+                ),
               ),
             ),
 
             const SizedBox(height: 40),
+
             /// #### Subtext
-            Text('Begin a communication session',textAlign: TextAlign.center,
+            Text(
+              'Begin a communication session',
+              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
 
             const SizedBox(height: 80),
+
             /// #### Features Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -96,7 +117,6 @@ class StartPage extends StatelessWidget {
                 /// ##### Text Feature
                 Column(
                   children: [
-
                     Container(
                       height: 50,
                       width: 50,
@@ -111,17 +131,16 @@ class StartPage extends StatelessWidget {
                           width: 40,
                           height: 40,
                         ),
-                      ),  
+                      ),
                     ),
 
-                    Text('Text',style: Theme.of(context).textTheme.bodySmall,),
-
+                    Text('Text', style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ),
+
                 /// ##### Speech Feature
                 Column(
                   children: [
-
                     Container(
                       height: 50,
                       width: 50,
@@ -139,9 +158,13 @@ class StartPage extends StatelessWidget {
                       ),
                     ),
 
-                    Text('Speech',style: Theme.of(context).textTheme.bodySmall,),
+                    Text(
+                      'Speech',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
+
                 /// ##### Guided Feature
                 Column(
                   children: [
@@ -161,8 +184,11 @@ class StartPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    
-                    Text('Guided',style: Theme.of(context).textTheme.bodySmall,),
+
+                    Text(
+                      'Guided',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ],

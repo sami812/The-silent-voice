@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:the_silent_voice/main.dart';
+import 'package:the_silent_voice/utils.dart';
 
 /// # NoSelectionControls
-/// Custom `TextSelectionControls` to remove any selection handles, toolbar, 
+/// Custom `TextSelectionControls` to remove any selection handles, toolbar,
 /// or indicator under the cursor. Useful for a clean minimal TextField UI.
 class NoSelectionControls extends TextSelectionControls {
   @override
@@ -22,10 +24,7 @@ class NoSelectionControls extends TextSelectionControls {
   }
 
   @override
-  Offset getHandleAnchor(
-    TextSelectionHandleType type,
-    double textLineHeight,
-  ) {
+  Offset getHandleAnchor(TextSelectionHandleType type, double textLineHeight) {
     return Offset.zero;
   }
 
@@ -49,38 +48,90 @@ class NoSelectionControls extends TextSelectionControls {
 /// including name and email. It also provides appearance settings (Dark/Light mode),
 /// preferences, privacy/security, and app information.
 /// - Editable text fields use `NoSelectionControls` to remove cursor underline and handles.
-class Profilepage extends StatefulWidget {
-  const Profilepage({super.key});
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
 
   @override
-  State<Profilepage> createState() => _ProfilepageState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
 /// ## _ProfilepageState
-/// State class for `Profilepage`. Handles editing of user info, theme switching,
-/// and taps on settings/preferences.
-class _ProfilepageState extends State<Profilepage> {
-  bool EditProfileData = false;
-  late final TextEditingController UserName;
-  late final TextEditingController UserEmail;
-  String Name = "User Name";
-  String Email = "user@email.com";
+/// State class for `Profilepage`. Handles editing of user info, image picking (camera/gallery), theme switching,and taps on settings/preferences.
+ 
+class _ProfilePageState extends State<ProfilePage> {
+  /// ### User Profile Image
+  /// Stores the selected profile image as bytes (Uint8List)
+  Uint8List? _image;
+
+  /// ### selectImage
+  /// Opens the image picker to select an image from the given source
+  /// - source: `ImageSource.camera` or `ImageSource.gallery`
+  /// - sets `_image` if a file is selected
+  void selectImage(ImageSource source) async {
+    Uint8List? image = await pickImage(source);
+    if (image == null) return;
+    setState(() {
+      _image = image;
+    });
+  }
+
+  /// ### showImageOptions
+  /// Displays a bottom sheet allowing the user to pick image from Camera or Gallery
+  void showImageOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              /// ### Camera Option
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text("Camera"),
+                onTap: () {
+                  Navigator.pop(context);
+                  selectImage(ImageSource.camera);
+                },
+              ),
+              /// ### Gallery Option
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text("Gallery"),
+                onTap: () {
+                  Navigator.pop(context);
+                  selectImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+  /// ### Profile Editing Controls
+  bool editProfileData = false;
+  late final TextEditingController userName;
+  late final TextEditingController userEmail;
+  /// ### Default Profile Info
+  String name = "User Name";
+  String email = "user@email.com";
   @override
   void initState() {
     super.initState();
-    UserName = TextEditingController(text: Name);
-    UserEmail = TextEditingController(text: Email);
+    userName = TextEditingController(text: name);
+    userEmail = TextEditingController(text: email);
   }
 
   @override
   void dispose() {
-    UserName.dispose();
-    UserEmail.dispose();
+    userName.dispose();
+    userEmail.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    /// ### Check Theme Mode
     final switched = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       /// ### Body ListView
@@ -110,6 +161,7 @@ class _ProfilepageState extends State<Profilepage> {
               ],
             ),
           ),
+
           /// ### Profile Avatar & Data Section
           Container(
             width: double.infinity,
@@ -125,32 +177,27 @@ class _ProfilepageState extends State<Profilepage> {
             child: Column(
               children: [
                 const SizedBox(height: 20),
+
                 /// #### Profile Picture with Camera Button
                 Stack(
                   children: [
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: CircleAvatar(
-                        radius: 18.5,
-                        backgroundColor: Colors.white,
-                        child: CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.blue[800],
-                          child: Icon(
-                            Icons.camera_alt,
-                            size: 18,
-                            color: Colors.white,
+                    _image != null
+                        ? CircleAvatar(
+                            radius: 65,
+                            backgroundImage: MemoryImage(_image!),
+                          )
+                        : CircleAvatar(
+                            radius: 65,
+                            backgroundImage:
+                                AssetImage("assets/icons/profile.avif")
+                                    as ImageProvider,
                           ),
-                        ),
+                    Positioned(
+                      bottom: -10,
+                      left: 80,
+                      child: IconButton(
+                        onPressed: showImageOptions, // opens camera/gallery options
+                        icon: Icon(Icons.add_a_photo_rounded),
                       ),
                     ),
                   ],
@@ -158,11 +205,11 @@ class _ProfilepageState extends State<Profilepage> {
                 const SizedBox(height: 10),
 
                 /// #### User Name TextField / Display
-                EditProfileData
+                editProfileData
                     ? Padding(
                         padding: const EdgeInsets.only(right: 30, left: 30),
                         child: TextField(
-                          controller: UserName,
+                          controller: userName,
                           textAlign: TextAlign.center,
                           cursorColor: Colors.black,
                           selectionControls: NoSelectionControls(),
@@ -185,17 +232,18 @@ class _ProfilepageState extends State<Profilepage> {
                         ),
                       )
                     : Text(
-                        Name,
+                        name,
                         style: Theme.of(context).textTheme.displaySmall,
                       ),
 
                 const SizedBox(height: 8),
+
                 /// #### User Email TextField / Display
-                EditProfileData
+                editProfileData
                     ? Padding(
                         padding: const EdgeInsets.only(right: 30, left: 30),
                         child: TextField(
-                          controller: UserEmail,
+                          controller: userEmail,
                           textAlign: TextAlign.center,
                           cursorColor: Colors.black,
                           selectionControls: NoSelectionControls(),
@@ -217,9 +265,10 @@ class _ProfilepageState extends State<Profilepage> {
                           ),
                         ),
                       )
-                    : Text(Email, style: Theme.of(context).textTheme.bodySmall),
+                    : Text(email, style: Theme.of(context).textTheme.bodySmall),
 
                 const SizedBox(height: 5),
+
                 /// #### Edit / Save Button
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -227,19 +276,20 @@ class _ProfilepageState extends State<Profilepage> {
                     overlayColor: Colors.lightBlueAccent,
                   ),
                   onPressed: () async {
-                    if (EditProfileData) {
+                    /// Save edits if editing
+                    if (editProfileData) {
                       setState(() {
-                        Name = UserName.text;
-                        Email = UserEmail.text;
+                        name = userName.text;
+                        email = userEmail.text;
                       });
                     }
-
+                    /// Toggle edit mode
                     setState(() {
-                      EditProfileData = !EditProfileData;
+                      editProfileData = !editProfileData;
                     });
                   },
                   child: Text(
-                    EditProfileData ? "Save" : "Edit",
+                    editProfileData ? "Save" : "Edit",
                     style: TextStyle(color: Colors.blue),
                   ),
                 ),
@@ -249,6 +299,7 @@ class _ProfilepageState extends State<Profilepage> {
             ),
           ),
           const SizedBox(height: 10),
+
           /// ### Appearance Section (Dark / Light Mode)
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -308,6 +359,7 @@ class _ProfilepageState extends State<Profilepage> {
               ],
             ),
           ),
+
           /// ### Preferences Section
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -322,6 +374,7 @@ class _ProfilepageState extends State<Profilepage> {
                   ),
                 ),
                 Divider(),
+
                 /// #### Notifications Row
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10, 10, 10, 5),
@@ -330,8 +383,8 @@ class _ProfilepageState extends State<Profilepage> {
                     highlightColor: Colors.transparent,
                     hoverColor: Colors.transparent,
                     focusColor: Colors.transparent,
-                    onTap: (){},
-                    child:Row(
+                    onTap: () {},
+                    child: Row(
                       children: [
                         Icon(Icons.notifications_none),
                         const SizedBox(width: 8),
@@ -341,25 +394,23 @@ class _ProfilepageState extends State<Profilepage> {
                             style: Theme.of(context).textTheme.displaySmall,
                           ),
                         ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          color: Colors.grey[400],
-                        ),
+                        Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
                       ],
                     ),
-                  )
+                  ),
                 ),
                 Divider(),
+
                 /// #### Language Row
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10, 10, 10, 20),
-                  child:InkWell(
+                  child: InkWell(
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
                     hoverColor: Colors.transparent,
                     focusColor: Colors.transparent,
-                    onTap: (){},
-                    child:Row(
+                    onTap: () {},
+                    child: Row(
                       children: [
                         Icon(Icons.language_outlined),
                         const SizedBox(width: 8),
@@ -369,17 +420,15 @@ class _ProfilepageState extends State<Profilepage> {
                             style: Theme.of(context).textTheme.displaySmall,
                           ),
                         ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          color: Colors.grey[400],
-                        ),
+                        Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
                       ],
                     ),
-                  ) 
+                  ),
                 ),
               ],
             ),
           ),
+
           /// ### Privacy & Security Section
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -401,8 +450,8 @@ class _ProfilepageState extends State<Profilepage> {
                     highlightColor: Colors.transparent,
                     hoverColor: Colors.transparent,
                     focusColor: Colors.transparent,
-                    onTap: (){},
-                    child:Row(
+                    onTap: () {},
+                    child: Row(
                       children: [
                         Icon(Icons.privacy_tip_outlined),
                         const SizedBox(width: 8),
@@ -412,17 +461,15 @@ class _ProfilepageState extends State<Profilepage> {
                             style: Theme.of(context).textTheme.displaySmall,
                           ),
                         ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          color: Colors.grey[400],
-                        ),
+                        Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
                       ],
                     ),
-                  )
+                  ),
                 ),
               ],
             ),
           ),
+
           /// ### About Section
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -444,8 +491,8 @@ class _ProfilepageState extends State<Profilepage> {
                     highlightColor: Colors.transparent,
                     hoverColor: Colors.transparent,
                     focusColor: Colors.transparent,
-                    onTap: (){},
-                    child:Row(
+                    onTap: () {},
+                    child: Row(
                       children: [
                         Icon(Icons.info_outline_rounded),
                         const SizedBox(width: 8),
@@ -455,13 +502,10 @@ class _ProfilepageState extends State<Profilepage> {
                             style: Theme.of(context).textTheme.displaySmall,
                           ),
                         ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          color: Colors.grey[400],
-                        ),
+                        Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
                       ],
                     ),
-                  )
+                  ),
                 ),
               ],
             ),

@@ -1,4 +1,4 @@
-package com.example.graduationproject
+package com.example.silentvoice
 
 import io.flutter.embedding.android.FlutterActivity
 

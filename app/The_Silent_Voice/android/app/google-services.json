@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "519495307002",
+    "project_id": "the-silent-voice",
+    "storage_bucket": "the-silent-voice.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:519495307002:android:323c2e73a2a1b285ffc343",
+        "android_client_info": {
+          "package_name": "com.example.silentvoice"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaPLoqgZhn7Ln7uEMCdj3LHdSJxMMqJrM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

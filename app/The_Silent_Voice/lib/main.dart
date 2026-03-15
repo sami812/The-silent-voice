@@ -1,12 +1,14 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
-import 'themes/themedata.dart';
-import 'pages/startpage.dart';
-import 'pages/profilepage.dart';
-import 'pages/historypage.dart';
+import 'themes/theme_data.dart';
+import 'pages/start_page.dart';
+import 'pages/profile_page.dart';
+import 'pages/history_page.dart';
 import 'package:provider/provider.dart';
 import 'services/stt_service.dart';
-import 'services/tts_service.dart';
+import 'firebase_options.dart';
+//import 'services/tts_service.dart';
 
 /// # Main page
 /// - contain all the main class `TheSilentVoice`
@@ -15,15 +17,16 @@ import 'services/tts_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final prefs = await SharedPreferences.getInstance();
   final switched = prefs.getBool('isDarkMode') ?? false;
-
   runApp(TheSilentVoice(switched: switched));
 }
 
 class TheSilentVoice extends StatefulWidget {
   final bool switched;
   const TheSilentVoice({super.key, required this.switched});
+  // ignore: library_private_types_in_public_api
   static _TheSilentVoiceState of(BuildContext context) =>
       context.findAncestorStateOfType<_TheSilentVoiceState>()!;
   @override
@@ -94,7 +97,7 @@ class BottomNav extends StatefulWidget {
 
 class _BottomNavState extends State<BottomNav> {
   int selectPage = 1;
-  List<Widget> pages = [Historypage(), StartPage(), Profilepage()];
+  List<Widget> pages = [HistoryPage(), StartPage(), ProfilePage()];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
