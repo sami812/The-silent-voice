@@ -44,6 +44,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_core: ^4.5.0
   image_picker: ^1.2.1
+  chat_bubbles: ^1.9.0
   # https://pub.dev/packages/cupertino_icons
 
 dev_dependencies:

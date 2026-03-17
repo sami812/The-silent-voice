@@ -15,64 +15,82 @@ import 'dart:math' as math;
 /// - all output got to the seame text-to-speach model
 
 class UtilityNavigationBar extends StatefulWidget {
-  const UtilityNavigationBar({super.key});
-
+  /// callback to notify parent when message is sent
+  final Function(String)? onMessageSent;
+  const UtilityNavigationBar({super.key, this.onMessageSent});
   @override
   State<UtilityNavigationBar> createState() => _UtilityNavigationBarState();
 }
 
 class _UtilityNavigationBarState extends State<UtilityNavigationBar>
     with SingleTickerProviderStateMixin {
+  final TextEditingController userMessage = TextEditingController();
 
   /// starting position of the drag
-  Offset? _dragStart;
+  Offset? dragStart;
 
   /// current finger position during drag
-  Offset? _dragCurrent;
+  Offset? dragCurrent;
 
   /// flag that indicate if user is currently dragging
-  bool _isDragging = false;
+  bool isDragging = false;
 
   /// controller for animation of expanding circle
-  late AnimationController _animationController;
+  late AnimationController animationController;
 
   /// scale animation used when the circle expand
-  late Animation<double> _scaleAnimation;
+  late Animation<double> scaleAnimation;
 
   /// how much the circle move horizontally when expanded
-  static const double _expandedOffsetX = 45.0;
+  static const double expandedOffsetX = 45.0;
 
   /// how much the circle move vertically when expanded
-  static const double _expandedOffsetY = -80.0;
+  static const double expandedOffsetY = -80.0;
 
   @override
   void initState() {
     super.initState();
 
     /// initialize animation controller
-    _animationController = AnimationController(
+    animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
 
     /// define scale animation from normal size -> expanded size
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 3.5).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOut,
-      ),
+    scaleAnimation = Tween<double>(begin: 1.0, end: 3.5).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
     );
   }
 
   @override
   void dispose() {
+    /// clean up resources
+    userMessage.dispose();
     /// dispose animation controller to prevent memory leak
-    _animationController.dispose();
+    animationController.dispose();
     super.dispose();
+  }
+  /// Message Handling 
+  /// send user text input to TTS
+
+  void handleSend() {
+    final text = userMessage.text.trim();
+    /// ignore empty messages
+    if (text.isNotEmpty) {
+      sendToTTS(text);
+      /// notify parent widget if needed
+      if (widget.onMessageSent != null) {
+        widget.onMessageSent!(text);
+      }
+      /// reset UI
+      userMessage.clear();
+      FocusScope.of(context).unfocus();
+    }
   }
 
   /// this method allow us to save conversation
-  void _handleSaveConversation() {
+  void handleSaveConversation() {
     print('Saving conversation to history');
 
     /// show confirmation snackbar
@@ -85,7 +103,7 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
   }
 
   /// this method builds the custom message input field
-  Widget _buildCustomMessageSheet() {
+  Widget buildCustomMessageSheet() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
 
@@ -93,18 +111,18 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.tertiaryContainer,
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline,
-        ),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
 
       /// layout of textfield + send button
       child: Row(
         children: [
-          const Expanded(
+          /// text input
+          Expanded(
             child: TextField(
+              controller: userMessage,
               textAlign: TextAlign.start,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: "Enter message...",
                 border: InputBorder.none,
                 isDense: true,
@@ -124,7 +142,11 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
             icon: const Icon(Icons.send),
 
             /// send message to text-to-speech
-            onPressed: () => _sendToTTS("custom message"),
+            onPressed: () {
+              setState(() {
+                handleSend();
+              });
+            },
           ),
         ],
       ),
@@ -132,7 +154,7 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
   }
 
   /// method for sending message to text-to-speech model
-  void _sendToTTS(String message) {
+  void sendToTTS(String message) {
     print('Sending to TTS: $message');
 
     /// feedback for user
@@ -145,75 +167,72 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
   }
 
   /// Handle drag start
-  void _handleDragStart(DragStartDetails details) {
+  void handleDragStart(DragStartDetails details) {
     setState(() {
       /// store drag start position
-      _dragStart = details.globalPosition;
+      dragStart = details.globalPosition;
 
       /// initialize current position
-      _dragCurrent = details.globalPosition;
+      dragCurrent = details.globalPosition;
 
       /// activate dragging mode
-      _isDragging = true;
+      isDragging = true;
     });
 
     /// start expand animation
-    _animationController.forward();
+    animationController.forward();
   }
 
   /// Handle drag update
-  void _handleDragUpdate(DragUpdateDetails details) {
+  void handleDragUpdate(DragUpdateDetails details) {
     setState(() {
       /// update finger position during drag
-      _dragCurrent = details.globalPosition;
+      dragCurrent = details.globalPosition;
     });
   }
 
   /// Handle drag end
-  void _handleDragEnd(DragEndDetails details) {
-
+  void handleDragEnd(DragEndDetails details) {
     /// if drag positions are not valid cancel operation
-    if (_dragStart == null || _dragCurrent == null) {
-      _cancelOperation();
+    if (dragStart == null || dragCurrent == null) {
+      cancelOperation();
       return;
     }
 
     /// determine which segment user selected
-    final active = _getActiveSegment();
+    final active = getActiveSegment();
 
     if (active == 'right') {
-      _sendToTTS('No');
+      sendToTTS('No');
     } else if (active == 'top') {
-      _sendToTTS('Can you repeat what you said again?');
+      sendToTTS('Can you repeat what you said again?');
     } else if (active == 'left') {
-      _sendToTTS('Yes');
+      sendToTTS('Yes');
     } else if (active == 'bottom') {
       print('Operation cancelled');
     }
 
     /// reset UI
-    _cancelOperation();
+    cancelOperation();
   }
 
   /// reset drag state and reverse animation
-  void _cancelOperation() {
+  void cancelOperation() {
     setState(() {
-      _isDragging = false;
-      _dragStart = null;
-      _dragCurrent = null;
+      isDragging = false;
+      dragStart = null;
+      dragCurrent = null;
     });
-
-    _animationController.reverse();
+    animationController.reverse();
   }
 
   /// determine which direction the user dragged
-  String _getActiveSegment() {
-
-    if (_dragStart == null || _dragCurrent == null) return 'none';
+  String getActiveSegment() {
+    if (dragStart == null || dragCurrent == null) return 'none';
 
     /// calculate difference between start and current
-    final dx = _dragCurrent!.dx - _dragStart!.dx;
-    final dy = _dragCurrent!.dy - _dragStart!.dy;
+    final dx = dragCurrent!.dx - dragStart!.dx;
+    final dy = dragCurrent!.dy - dragStart!.dy;
 
     /// ignore very small drag movements
     if ((dx.abs() + dy.abs()) < 10) return 'none';
@@ -225,10 +244,10 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
     final degrees = (angle * 180 / math.pi + 360) % 360;
 
     /// determine segment based on angle
-    if (degrees >= 315 || degrees < 45) return 'right';  
-    if (degrees >= 45 && degrees < 135) return 'bottom'; 
-    if (degrees >= 135 && degrees < 225) return 'left';  
-    if (degrees >= 225 && degrees < 315) return 'top';   
+    if (degrees >= 315 || degrees < 45) return 'right';
+    if (degrees >= 45 && degrees < 135) return 'bottom';
+    if (degrees >= 135 && degrees < 225) return 'left';
+    if (degrees >= 225 && degrees < 315) return 'top';
 
     return 'none';
   }
@@ -236,19 +255,15 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
   @override
   Widget build(BuildContext context) {
     return Padding(
-
       /// move the bar up when keyboard appear
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
 
       child: Container(
-
         /// background of the navigation bar
         decoration: BoxDecoration(
-          color: Theme.of(context)
-              .bottomNavigationBarTheme
-              .backgroundColor,
+          color: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
 
           /// top border
           border: Border(
@@ -263,27 +278,23 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
           top: false,
 
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
 
             /// layout of circle + message field
             child: Row(
               children: [
-
                 /// circle + save button column
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildGestureCircle(),
+                    buildGestureCircle(),
                     const SizedBox(height: 8),
 
                     /// save conversation button
-                    _buildIconButton(
+                    buildIconButton(
                       icon: Icons.bookmark_outline,
                       tooltip: 'Save conversation',
-                      onPressed: _handleSaveConversation,
+                      onPressed: handleSaveConversation,
                     ),
                   ],
                 ),
@@ -291,9 +302,7 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
                 const SizedBox(width: 12),
 
                 /// custom message field
-                Expanded(
-                  child: _buildCustomMessageSheet(),
-                ),
+                Expanded(child: buildCustomMessageSheet()),
               ],
             ),
           ),
@@ -303,13 +312,12 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
   }
 
   /// reusable circular icon button
-  Widget _buildIconButton({
+  Widget buildIconButton({
     required IconData icon,
     required String tooltip,
     required VoidCallback onPressed,
   }) {
     return Container(
-
       /// circular style
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.tertiaryContainer,
@@ -331,41 +339,32 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
   }
 
   /// main gesture circle widget
-  Widget _buildGestureCircle() {
+  Widget buildGestureCircle() {
     return GestureDetector(
-
       /// drag events
-      onPanStart: _handleDragStart,
-      onPanUpdate: _handleDragUpdate,
-      onPanEnd: _handleDragEnd,
+      onPanStart: handleDragStart,
+      onPanUpdate: handleDragUpdate,
+      onPanEnd: handleDragEnd,
 
       child: AnimatedBuilder(
-        animation: _scaleAnimation,
+        animation: scaleAnimation,
         builder: (context, child) {
-
           /// normal circle when not dragging
-          if (!_isDragging) {
-            return SizedBox(
-              width: 45,
-              height: 45,
-              child: _buildNormalCircle(),
-            );
+          if (!isDragging) {
+            return SizedBox(width: 45, height: 45, child: buildNormalCircle());
           }
 
           /// expanded circle when dragging
           return Transform.translate(
-            offset: const Offset(
-              _expandedOffsetX,
-              _expandedOffsetY,
-            ),
+            offset: const Offset(expandedOffsetX, expandedOffsetY),
 
             child: Transform.scale(
-              scale: _scaleAnimation.value,
+              scale: scaleAnimation.value,
 
               child: SizedBox(
                 width: 45,
                 height: 45,
-                child: _buildExpandedCircle(),
+                child: buildExpandedCircle(),
               ),
             ),
           );
@@ -375,7 +374,7 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
   }
 
   /// default circle appearance
-  Widget _buildNormalCircle() {
+  Widget buildNormalCircle() {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
@@ -395,53 +394,56 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
   }
 
   /// expanded circle that contains gesture segments
-  Widget _buildExpandedCircle() {
-
+  Widget buildExpandedCircle() {
     /// get current active segment
-    final activeSegment = _getActiveSegment();
+    final activeSegment = getActiveSegment();
 
     return Stack(
       children: [
-
         /// colored circle slices
         CustomPaint(
           size: const Size(45, 45),
-          painter: CircleSegmentPainter(
-            activeSegment: activeSegment,
-          ),
+          painter: CircleSegmentPainter(activeSegment: activeSegment),
         ),
 
         /// labels inside segments
-        _buildSegmentLabels(activeSegment),
+        buildSegmentLabels(activeSegment),
       ],
     );
   }
 
   /// build labels for each direction
-  Widget _buildSegmentLabels(String activeSegment) {
+  Widget buildSegmentLabels(String activeSegment) {
     return Stack(
       children: [
-        _buildCenteredLabel(
-            Alignment.topCenter, '?', activeSegment == 'top'),
-        _buildCenteredLabel(
-            Alignment.centerRight, 'N', activeSegment == 'right'),
-        _buildCenteredLabel(
-            Alignment.centerLeft, 'Y', activeSegment == 'left'),
-        _buildCenteredLabel(
-            Alignment.bottomCenter, 'X', activeSegment == 'bottom',
-            isIcon: true),
+        buildCenteredLabel(Alignment.topCenter, '?', activeSegment == 'top'),
+        buildCenteredLabel(
+          Alignment.centerRight,
+          'No',
+          activeSegment == 'right',
+        ),
+        buildCenteredLabel(
+          Alignment.centerLeft,
+          'Yes',
+          activeSegment == 'left',
+        ),
+        buildCenteredLabel(
+          Alignment.bottomCenter,
+          'X',
+          activeSegment == 'bottom',
+          isIcon: true,
+        ),
       ],
     );
   }
 
   /// reusable label builder
-  Widget _buildCenteredLabel(
+  Widget buildCenteredLabel(
     Alignment alignment,
     String label,
     bool isActive, {
     bool isIcon = false,
   }) {
-
     /// move labels slightly toward center
     final targetAlignment = alignment * 0.7;
 
@@ -449,18 +451,13 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
       alignment: targetAlignment,
 
       child: isIcon
-          ? Icon(
-              Icons.close,
-              color: Colors.white,
-              size: isActive ? 8 : 6,
-            )
+          ? Icon(Icons.close, color: Colors.white, size: isActive ? 8 : 6)
           : Text(
               label,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: isActive ? 8 : 6,
-                fontWeight:
-                    isActive ? FontWeight.bold : FontWeight.normal,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
               ),
             ),
     );
@@ -469,7 +466,6 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
 
 /// painter that draw the circle divided into 4 gesture segments
 class CircleSegmentPainter extends CustomPainter {
-
   /// currently active segment
   final String activeSegment;
 
@@ -477,22 +473,15 @@ class CircleSegmentPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    final rect = Rect.fromCircle(
-      center: center,
-      radius: radius,
-    );
+    final rect = Rect.fromCircle(center: center, radius: radius);
 
     /// helper function to draw one slice
     void drawSlice(double startAngle, Color color, bool isActive) {
-
       final paint = Paint()
-        ..color = isActive
-            ? color
-            : color.withOpacity(0.6)
+        ..color = isActive ? color : color.withOpacity(0.6)
         ..style = PaintingStyle.fill;
 
       canvas.drawArc(
@@ -520,7 +509,6 @@ class CircleSegmentPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(
-      CircleSegmentPainter oldDelegate) =>
+  bool shouldRepaint(CircleSegmentPainter oldDelegate) =>
       oldDelegate.activeSegment != activeSegment;
 }
