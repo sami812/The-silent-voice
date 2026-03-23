@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +8,9 @@ import 'pages/profile_page.dart';
 import 'pages/history_page.dart';
 import 'package:provider/provider.dart';
 import 'services/stt_service.dart';
-import 'firebase_options.dart';
 //import 'services/tts_service.dart';
+//firebase is not supported on linux (-__-)
+import 'firebase_options.dart';
 
 /// # Main page
 /// - contain all the main class `TheSilentVoice`
@@ -16,8 +18,14 @@ import 'firebase_options.dart';
 /// - SharedPreferences : saves data on the device's internal storage, so the info stays put even if the user closes the app or restarts their phone. Its allows the application to remember the user's selected theme (Light or Dark mode) even after the app is closed and reopened.
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // fire base only initilized if platform is Android or IOS
+  if (Platform.isAndroid || Platform.isIOS) {
+    WidgetsFlutterBinding.ensureInitialized();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+  ;
   final prefs = await SharedPreferences.getInstance();
   final switched = prefs.getBool('isDarkMode') ?? false;
   runApp(TheSilentVoice(switched: switched));
