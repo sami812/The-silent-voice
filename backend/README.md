@@ -14,9 +14,9 @@ The mobile application processes video locally to detect isolated sign language 
 ## API Documentation
 
 
-### 🌍 Live Environment (Online)
-* **API Base URL:** `https://the-silent-voice-xxxx.onrender.com`
-* **Live Swagger Docs:** `https://the-silent-voice-xxxx.onrender.com/docs`
+###  Live Environment (Online)
+* **API Base URL:** `link.onrender.com`
+* **Live Swagger Docs:** `link.onrender.com/docs`
 
 ### Endpoint
 `POST /api/process`
