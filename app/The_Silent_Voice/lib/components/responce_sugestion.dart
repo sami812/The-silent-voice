@@ -23,10 +23,10 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
 
   // just for testing
   final List<String> suggestions = [
-    //'suggestion number 1',
-    //'suggestion number 2',
-    //'suggestion number 3',
-    //'suggestion number 4',
+    'suggestion number 1',
+    'suggestion number 2',
+    'suggestion number 3',
+    'suggestion number 4',
     //'suggestion number 5',
     //'suggestion number 6',
     //'suggestion number 7',

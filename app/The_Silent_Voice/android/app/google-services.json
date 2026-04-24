@@ -12,7 +12,20 @@
           "package_name": "com.example.silentvoice"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "519495307002-h99i7oru0df9p6ejm3osqf386cte745f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.silentvoice",
+            "certificate_hash": "048f33f90c7ac51cc543d4d1d9e93237784e9c41"
+          }
+        },
+        {
+          "client_id": "519495307002-fn75nbvk393cucbfm7jbrcp5g99ombmb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCaPLoqgZhn7Ln7uEMCdj3LHdSJxMMqJrM"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "519495307002-fn75nbvk393cucbfm7jbrcp5g99ombmb.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "519495307002-o8u87g46drklnjlnpe402su2v5f41dr1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.silentvoice"
+              }
+            }
+          ]
         }
       }
     }

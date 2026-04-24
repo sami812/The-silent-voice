@@ -67,7 +67,7 @@ class _ConversationPageState extends State<ConversationPage> {
             const LiveSubtitleWindow(),
             /// Component 2:
             /// Context-aware suggested responses
-            Expanded(flex: 1, child: ResponseSuggestion()),
+            Expanded(flex: 2, child: ResponseSuggestion()),
             /// Component 3: Chat History
             /// Reverse ListView:
             /// - newest messages appear at the bottom
