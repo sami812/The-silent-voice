@@ -22,9 +22,6 @@ class NoSelectionControls extends TextSelectionControls {
     return const SizedBox.shrink();
   }
 
-  /*************  ✨ Windsurf Command ⭐  *************/
-  /// Returns a size of zero, indicating that the handle should not be drawn.
-  /*******  f24d8001-de8c-434c-8c0c-cadf3172fb66  *******/
   @override
   Size getHandleSize(double textLineHeight) {
     return Size.zero;
@@ -272,7 +269,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             showImageOptions, // opens camera/gallery options
                         icon: Icon(
                           Icons.add_a_photo_rounded,
-                          color: Colors.white,
+                          color: const Color.fromARGB(255, 149, 155, 155),
                         ),
                       ),
                     ),
@@ -577,6 +574,40 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                         Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                  child: InkWell(
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    hoverColor: Colors.transparent,
+                    focusColor: Colors.transparent,
+                    onTap: ()async{
+                      return await FirebaseAuth.instance.signOut();
+                    },
+                    child: Row(
+                      children: [
+                        SizedBox(width:10),
+                        Expanded(
+                          child: Text(
+                            'Logout',
+                            style: Theme.of(context).textTheme.displaySmall,
+                          ),
+                        ),
+                        Icon(Icons.logout, color: Colors.grey[400]),
+                        SizedBox(width:10),
                       ],
                     ),
                   ),

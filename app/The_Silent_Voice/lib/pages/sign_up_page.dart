@@ -1,17 +1,18 @@
-// import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:typed_data';
+// import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:the_silent_voice/pages/home_page.dart';
-import 'package:the_silent_voice/pages/login_page.dart';
+// import 'package:the_silent_voice/pages/home_page.dart';
 import 'package:the_silent_voice/upload_to_cloudinary.dart';
+import 'package:the_silent_voice/user_cache.dart';
 import 'package:the_silent_voice/utils.dart';
 
 class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+  final void Function()? onTap;
+  const SignUpPage({super.key, required this.onTap});
   @override
   State<SignUpPage> createState() => _SignUpPageState();
 }
@@ -23,32 +24,36 @@ class _SignUpPageState extends State<SignUpPage> {
   late final TextEditingController userName;
 
   String? message;
+  Future<Map<String, dynamic>?> getUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    return doc.data();
+  }
+
   Future<void> signUp() async {
     if (userPassword.text.length < 6) {
       setState(() {
         message = 'Password must be at least 6 characters';
       });
-      return;
+      return ;
     }
     if (userEmail.text.isEmpty || userName.text.isEmpty) {
       setState(() {
         message = 'Please fill in all the fields';
       });
-      return;
+      return ;
     }
     if (_image == null) {
       setState(() {
         message = 'Please select an image';
       });
-      return;
+      return ;
     }
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return const Center(child: CircularProgressIndicator());
-      },
-    );
     try {
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
@@ -56,6 +61,7 @@ class _SignUpPageState extends State<SignUpPage> {
             password: userPassword.text,
           );
       String uid = userCredential.user!.uid;
+      // await user.sendEmailVerification();
       String imageUrl = await uploadToCloudinary(_image!);
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
@@ -64,16 +70,12 @@ class _SignUpPageState extends State<SignUpPage> {
         'photoUrl': imageUrl,
         'createdAt': DateTime.now(),
       });
-      Navigator.pop(context);
+      userCache = await getUserData();
       setState(() {
         message = null;
       });
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
+      return ;
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context);
       setState(() {
         if (e.code == 'email-already-in-use') {
           message = 'Email already exists';
@@ -83,28 +85,18 @@ class _SignUpPageState extends State<SignUpPage> {
           message = 'Invalid email';
         }
       });
+      return ;
     }
   }
 
   String? googleMessage;
   Future<void> signInWithGoogle() async {
     final GoogleSignIn googleSignIn = GoogleSignIn();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return const Center(child: CircularProgressIndicator());
-      },
-    );
     try {
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (!mounted) return;
-      if (googleUser == null) {
-        Navigator.pop(context);
-        return;
-      }
+      if (googleUser == null) return;
       final googleAuth = await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -115,19 +107,18 @@ class _SignUpPageState extends State<SignUpPage> {
       );
       final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
       final user = userCredential.user;
-      if (!mounted) return;
-      Navigator.pop(context);
-      if (user == null) {
-        return;
-      }
-      if(!isNewUser) {
+      if (user == null) return;
+      if (!isNewUser) {
         await FirebaseAuth.instance.signOut();
-        if(!context.mounted) return;
+        userCache = await getUserData();
+        if (!mounted) return;
         setState(() {
           googleMessage = 'Account already exists, please log in';
         });
         return;
       }
+      // await googleSignIn.signOut();
+      // await FirebaseAuth.instance.signOut();
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'uid': user.uid,
         'email': user.email,
@@ -135,23 +126,18 @@ class _SignUpPageState extends State<SignUpPage> {
         'photoUrl': user.photoURL,
         'createdAt': DateTime.now(),
       }, SetOptions(merge: true));
-      if (!context.mounted) return;
+      userCache = await getUserData();
+      if (!mounted) return;
       setState(() {
         googleMessage = null;
       });
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context);
       setState(() {
         if (e.code == 'account-exists-with-different-credential') {
           googleMessage = 'Account exists with different credential';
         } else if (e.code == 'invalid-credential') {
           googleMessage = 'Invalid credential';
-        }
-        else {
+        } else {
           message = 'Error signing in with Google';
         }
       });
@@ -320,6 +306,43 @@ class _SignUpPageState extends State<SignUpPage> {
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: signUp,
+                  // () async {
+                  //   final success = await signUp();
+                  //   if (!mounted) return;
+                  //   if (success) {
+                  //     AwesomeDialog(
+                  //       context: context,
+                  //       dialogType: DialogType.success,
+                  //       title: 'Verify your Email',
+                  //       desc:
+                  //           'We have sent a verification link to your email. Please check your email to verify your account.',
+                  //       btnOkOnPress: () async {
+                  //         final user = FirebaseAuth.instance.currentUser;
+                  //         if (user != null) {
+                  //           await user.reload();
+                  //           final refreshedUser =
+                  //               FirebaseAuth.instance.currentUser;
+                  //           if (refreshedUser != null &&
+                  //               refreshedUser.emailVerified) {
+                  //             Navigator.pushReplacement(
+                  //               context,
+                  //               MaterialPageRoute(
+                  //                 builder: (_) => const HomePage(),
+                  //               ),
+                  //             );
+                  //           } else {
+                  //             ScaffoldMessenger.of(context).showSnackBar(
+                  //               const SnackBar(
+                  //                 content: Text('Email not verified'),
+                  //                 duration: Duration(seconds: 2),
+                  //               ),
+                  //             );
+                  //           }
+                  //         }
+                  //       },
+                  //     ).show();
+                  //   }
+                  // },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     fixedSize: Size(350, 50),
@@ -357,23 +380,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // ClipRRect(
-                      //   borderRadius: BorderRadius.circular(50),
-                      //   child: Image.asset(
-                      //     'assets/icons/Facebook.png',
-                      //     width: 50,
-                      //     height: 50,
-                      //   ),
-                      // ),
-                      // SizedBox(width: 20),
-                      // ClipRRect(
-                      //   borderRadius: BorderRadius.circular(50),
-                      //   child: Image.asset(
-                      //     'assets/icons/google.jpg',
-                      //     width: 50,
-                      //     height: 50,
-                      //   ),
-                      // ),
                       GestureDetector(
                         onTap: () {
                           signInWithGoogle();
@@ -400,15 +406,8 @@ class _SignUpPageState extends State<SignUpPage> {
                         'Already have an account? ',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => LoginPage(),
-                            ),
-                          );
-                        },
+                      GestureDetector(
+                        onTap: widget.onTap,
                         child: Text(
                           'Login',
                           style: TextStyle(color: Colors.blue),

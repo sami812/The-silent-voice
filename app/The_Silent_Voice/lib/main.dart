@@ -1,15 +1,13 @@
-<<<<<<< Updated upstream
 import 'dart:io' show Platform;
-=======
 import 'package:firebase_auth/firebase_auth.dart';
->>>>>>> Stashed changes
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:the_silent_voice/pages/home_page.dart';
+import 'package:the_silent_voice/pages/login_or_register.dart';
 // import 'package:the_silent_voice/pages/home_page.dart';
-import 'package:the_silent_voice/pages/login_page.dart';
-import 'package:the_silent_voice/pages/sign_up_page.dart';
+//import 'package:the_silent_voice/pages/login_page.dart';
+//import 'package:the_silent_voice/pages/sign_up_page.dart';
 // import 'package:the_silent_voice/pages/sign_up_page.dart';
 import 'themes/theme_data.dart';
 import 'package:provider/provider.dart';
@@ -24,7 +22,6 @@ import 'firebase_options.dart';
 /// - SharedPreferences : saves data on the device's internal storage, so the info stays put even if the user closes the app or restarts their phone. Its allows the application to remember the user's selected theme (Light or Dark mode) even after the app is closed and reopened.
 
 void main() async {
-<<<<<<< Updated upstream
   // fire base only initilized if platform is Android or IOS
   if (Platform.isAndroid || Platform.isIOS) {
     WidgetsFlutterBinding.ensureInitialized();
@@ -32,12 +29,10 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   }
-  ;
-=======
+
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // await FirebaseAuth.instance.signOut();
->>>>>>> Stashed changes
   final prefs = await SharedPreferences.getInstance();
   final switched = prefs.getBool('isDarkMode') ?? false;
   runApp(TheSilentVoice(switched: switched));
@@ -89,23 +84,19 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
         theme: AppThemeData.light, // Light theme
         darkTheme: AppThemeData.dark, // Dark theme
         themeMode: _themeMode, // follow switch value in the  profile page
-        // home: HomePage(),
-        home: StreamBuilder<User?>(
+        home: StreamBuilder(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
             if (snapshot.hasData) {
-              return HomePage();
+              // final user = FirebaseAuth.instance.currentUser;
+              // if (user != null && user.emailVerified) {
+              //   return const HomePage();
+              // }
+              return const HomePage();
             }
-            return LoginPage();
+            return const LoginOrRegister();
           },
         ),
-        // LoginPage(),
-        // home: SignUpPage(),
       ),
     );
   }
