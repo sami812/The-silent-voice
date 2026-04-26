@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:the_silent_voice/services/tts_service.dart';
 
 /// ### Component 2: list of responce suggesiton
 ///
@@ -34,18 +36,22 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
     //'suggestion number 9',
     //'long suggestion ..........................................................................................',
   ];
-  // placeholder function
+
   void _handleTap(String response) {
-    // Send to text-to-speech model (send to the terminal for now)
-    print('Sending to TTS: $response');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        // well be piped to the tts model
-        content: Text('Speaking: $response'),
-        duration: Duration(seconds: 1),
-      ),
-    );
+    context.read<TtsService>().speak(response);
   }
+  // placeholder function (can be removed now)
+  // void _handleTap(String response) {
+  //    // Send to text-to-speech model (send to the terminal for now)
+  //    print('Sending to TTS: $response');
+  //    ScaffoldMessenger.of(context).showSnackBar(
+  //      SnackBar(
+  //        // well be piped to the tts model
+  //        content: Text('Speaking: $response'),
+  //        duration: Duration(seconds: 1),
+  //      ),
+  //    );
+  //  }
 
   void _handleLongPress(String response) {
     setState(() {
@@ -63,10 +69,17 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
 
   void _sendEditedResponse() {
     if (_editController.text.isNotEmpty) {
-      _handleTap(_editController.text);
+      context.read<TtsService>().speak(_editController.text);
       _closeEdit();
     }
   }
+  // placeholder function (can be removed now)
+  //  void _sendEditedResponse() {
+  //    if (_editController.text.isNotEmpty) {
+  //      _handleTap(_editController.text);
+  //      _closeEdit();
+  //    }
+  //  }
 
   @override
   void dispose() {

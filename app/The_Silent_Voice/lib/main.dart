@@ -73,7 +73,7 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SttService()),
-        //ChangeNotifierProvider(create: (_) => TtsService()),
+        ChangeNotifierProvider(create: (_) => TtsService()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
