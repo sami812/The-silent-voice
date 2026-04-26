@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:the_silent_voice/services/tts_service.dart';
 import 'dart:math' as math;
 
 /// ### Component 3: utility bar
@@ -14,311 +16,215 @@ import 'dart:math' as math;
 ///     - if you hover it then swipe down it cancels the operation
 /// - all output got to the seame text-to-speach model
 
+// note: might rewrite the entire page later (not a good implementaiton)
+
 class UtilityNavigationBar extends StatefulWidget {
-  /// callback to notify parent when message is sent
-  final Function(String)? onMessageSent;
-  const UtilityNavigationBar({super.key, this.onMessageSent});
+  const UtilityNavigationBar({super.key});
   @override
   State<UtilityNavigationBar> createState() => _UtilityNavigationBarState();
 }
 
 class _UtilityNavigationBarState extends State<UtilityNavigationBar>
     with SingleTickerProviderStateMixin {
-  final TextEditingController userMessage = TextEditingController();
-
-  /// starting position of the drag
-  Offset? dragStart;
-
-  /// current finger position during drag
-  Offset? dragCurrent;
-
-  /// flag that indicate if user is currently dragging
-  bool isDragging = false;
-
-  /// controller for animation of expanding circle
-  late AnimationController animationController;
-
-  /// scale animation used when the circle expand
-  late Animation<double> scaleAnimation;
-
-  /// how much the circle move horizontally when expanded
-  static const double expandedOffsetX = 45.0;
-
-  /// how much the circle move vertically when expanded
-  static const double expandedOffsetY = -80.0;
+  Offset? _dragStart;
+  Offset? _dragCurrent;
+  bool _isDragging = false;
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-
-    /// initialize animation controller
-    animationController = AnimationController(
+    _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
+      duration: Duration(milliseconds: 200),
     );
-
-    /// define scale animation from normal size -> expanded size
-    scaleAnimation = Tween<double>(begin: 1.0, end: 3.5).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 3.5).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
   }
 
   @override
   void dispose() {
-    /// clean up resources
-    userMessage.dispose();
-    /// dispose animation controller to prevent memory leak
-    animationController.dispose();
+    _animationController.dispose();
     super.dispose();
-  }
-  /// Message Handling 
-  /// send user text input to TTS
-
-  void handleSend() {
-    final text = userMessage.text.trim();
-    /// ignore empty messages
-    if (text.isNotEmpty) {
-      sendToTTS(text);
-      /// notify parent widget if needed
-      if (widget.onMessageSent != null) {
-        widget.onMessageSent!(text);
-      }
-      /// reset UI
-      userMessage.clear();
-      FocusScope.of(context).unfocus();
-    }
   }
 
   /// this method allow us to save conversation
-  void handleSaveConversation() {
+  void _handleSaveConversation() {
     print('Saving conversation to history');
-
-    /// show confirmation snackbar
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text('Conversation saved to history'),
         duration: Duration(seconds: 2),
       ),
     );
   }
 
-  /// this method builds the custom message input field
-  Widget buildCustomMessageSheet() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-
-      /// style of message container
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.tertiaryContainer,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-      ),
-
-      /// layout of textfield + send button
-      child: Row(
-        children: [
-          /// text input
-          Expanded(
-            child: TextField(
-              controller: userMessage,
-              textAlign: TextAlign.start,
-              decoration: const InputDecoration(
-                hintText: "Enter message...",
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-              ),
-            ),
-          ),
-
-          /// send button
-          IconButton(
-            constraints: const BoxConstraints(),
-            padding: const EdgeInsets.all(8),
-            iconSize: 20,
-            icon: const Icon(Icons.send),
-
-            /// send message to text-to-speech
-            onPressed: () {
-              setState(() {
-                handleSend();
-              });
-            },
-          ),
-        ],
-      ),
+  /// this method allow us to type cusstom massage using the keyboard
+  void _handleOpenKeyboard() {
+    print('Opening keyboard for custom message');
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _CustomMessageSheet(),
     );
   }
 
-  /// method for sending message to text-to-speech model
-  void sendToTTS(String message) {
-    print('Sending to TTS: $message');
-
-    /// feedback for user
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Speaking: $message'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
+  /// method for sending message
+  void _sendToTTS(String message) {
+    context.read<TtsService>().speak(message);
   }
+  //  void _sendToTTS(String message) {
+  //    print('Sending to TTS: $message');
+  //    ScaffoldMessenger.of(context).showSnackBar(
+  //      SnackBar(
+  //        content: Text('Speaking: $message'),
+  //        duration: Duration(seconds: 1),
+  //      ),
+  //    );
+  //  }
 
-  /// Handle drag start
-  void handleDragStart(DragStartDetails details) {
+  // Handle drag start
+  void _handleDragStart(DragStartDetails details) {
     setState(() {
-      /// store drag start position
-      dragStart = details.globalPosition;
-
-      /// initialize current position
-      dragCurrent = details.globalPosition;
-
-      /// activate dragging mode
-      isDragging = true;
+      _dragStart = details.globalPosition;
+      _dragCurrent = details.globalPosition;
+      _isDragging = true;
     });
-
-    /// start expand animation
-    animationController.forward();
+    _animationController.forward();
   }
 
-  /// Handle drag update
-  void handleDragUpdate(DragUpdateDetails details) {
+  // Handle drag update
+  void _handleDragUpdate(DragUpdateDetails details) {
     setState(() {
-      /// update finger position during drag
-      dragCurrent = details.globalPosition;
+      _dragCurrent = details.globalPosition;
     });
   }
 
-  /// Handle drag end
-  void handleDragEnd(DragEndDetails details) {
-    /// if drag positions are not valid cancel operation
-    if (dragStart == null || dragCurrent == null) {
-      cancelOperation();
+  // Handle drag end
+  void _handleDragEnd(DragEndDetails details) {
+    if (_dragStart == null || _dragCurrent == null) {
+      _cancelOperation();
       return;
     }
+    // calculate the position
+    final dx = _dragCurrent!.dx - _dragStart!.dx;
+    final dy = _dragCurrent!.dy - _dragStart!.dy;
 
-    /// determine which segment user selected
-    final active = getActiveSegment();
-
-    if (active == 'right') {
-      sendToTTS('No');
-    } else if (active == 'top') {
-      sendToTTS('Can you repeat what you said again?');
-    } else if (active == 'left') {
-      sendToTTS('Yes');
-    } else if (active == 'bottom') {
-      print('Operation cancelled');
-    }
-
-    /// reset UI
-    cancelOperation();
-  }
-
-  /// reset drag state and reverse animation
-  void cancelOperation() {
-    setState(() {
-      isDragging = false;
-      dragStart = null;
-      dragCurrent = null;
-    });
-    animationController.reverse();
-  }
-
-  /// determine which direction the user dragged
-  String getActiveSegment() {
-    if (dragStart == null || dragCurrent == null) return 'none';
-
-    /// calculate difference between start and current
-    final dx = dragCurrent!.dx - dragStart!.dx;
-    final dy = dragCurrent!.dy - dragStart!.dy;
-
-    /// ignore very small drag movements
-    if ((dx.abs() + dy.abs()) < 10) return 'none';
-
-    /// convert drag vector to angle
+    // Determine which segment was selected
     final angle = math.atan2(dy, dx);
+    final degrees = angle * 180 / math.pi;
 
-    /// convert radians to degrees
-    final degrees = (angle * 180 / math.pi + 360) % 360;
+    // Convert to 0-360 range
+    final normalizedDegrees = (degrees + 360) % 360;
 
-    /// determine segment based on angle
-    if (degrees >= 315 || degrees < 45) return 'right';
-    if (degrees >= 45 && degrees < 135) return 'bottom';
-    if (degrees >= 135 && degrees < 225) return 'left';
-    if (degrees >= 225 && degrees < 315) return 'top';
+    // circle divide into 4 segments
+    // Right (No): 315-45 degrees
+    // Top (Repeat): 225-315 degrees
+    // Left (Yes): 135-225 degrees
+    // Bottom (Cancel): 45-135 degrees
 
-    return 'none';
+    if ((normalizedDegrees >= 315 || normalizedDegrees < 45)) {
+      _sendToTTS('No');
+    } else if (normalizedDegrees >= 225 && normalizedDegrees < 315) {
+      _sendToTTS('Can you repeat what you said again?');
+    } else if (normalizedDegrees >= 135 && normalizedDegrees < 225) {
+      _sendToTTS('Yes');
+    } else {
+      // Bottom segment - Cancel
+      print('Operation cancelled'); // well get deleted
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cancelled'),
+          duration: Duration(milliseconds: 100),
+        ),
+      );
+    }
+    // reset state
+    setState(() {
+      _isDragging = false;
+      _dragStart = null;
+      _dragCurrent = null;
+    });
+    _animationController.reverse();
+  }
+
+  void _cancelOperation() {
+    setState(() {
+      _isDragging = false;
+      _dragStart = null;
+      _dragCurrent = null;
+    });
+    _animationController.reverse();
+  }
+
+  // Get active segment based on drag position
+  String _getActiveSegment() {
+    if (_dragStart == null || _dragCurrent == null) return 'none';
+
+    final dx = _dragCurrent!.dx - _dragStart!.dx;
+    final dy = _dragCurrent!.dy - _dragStart!.dy;
+
+    final angle = math.atan2(dy, dx);
+    final degrees = angle * 180 / math.pi;
+    final normalizedDegrees = (degrees + 270) % 360;
+
+    if ((normalizedDegrees >= 315 || normalizedDegrees < 45)) {
+      return 'left'; // Yes
+    } else if (normalizedDegrees >= 45 && normalizedDegrees < 135) {
+      return 'bottom'; // Cancel
+    } else if (normalizedDegrees >= 135 && normalizedDegrees < 225) {
+      return 'right'; // No
+    } else {
+      return 'top'; // Repeat
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      /// move the bar up when keyboard appear
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-
-      child: Container(
-        /// background of the navigation bar
-        decoration: BoxDecoration(
-          color: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
-
-          /// top border
-          border: Border(
-            top: BorderSide(
-              color: Theme.of(context).colorScheme.outline,
-              width: 1,
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
+            width: 1,
           ),
         ),
-
-        child: SafeArea(
-          top: false,
-
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-
-            /// layout of circle + message field
-            child: Row(
-              children: [
-                /// circle + save button column
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    buildGestureCircle(),
-                    const SizedBox(height: 8),
-
-                    /// save conversation button
-                    buildIconButton(
-                      icon: Icons.bookmark_outline,
-                      tooltip: 'Save conversation',
-                      onPressed: handleSaveConversation,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(width: 12),
-
-                /// custom message field
-                Expanded(child: buildCustomMessageSheet()),
-              ],
-            ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildIconButton(
+                icon: Icons.bookmark_outline,
+                tooltip: 'Save conversation',
+                onPressed: _handleSaveConversation,
+              ),
+              _buildGestureCircle(),
+              _buildIconButton(
+                icon: Icons.keyboard,
+                tooltip: 'Custom message',
+                onPressed: _handleOpenKeyboard,
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  /// reusable circular icon button
-  Widget buildIconButton({
+  Widget _buildIconButton({
     required IconData icon,
     required String tooltip,
     required VoidCallback onPressed,
   }) {
     return Container(
-      /// circular style
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.tertiaryContainer,
         shape: BoxShape.circle,
@@ -327,45 +233,32 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
           width: 1,
         ),
       ),
-
       child: IconButton(
         onPressed: onPressed,
         icon: Icon(icon),
         tooltip: tooltip,
-        iconSize: 22,
+        iconSize: 24,
         color: Theme.of(context).textTheme.titleSmall?.color,
       ),
     );
   }
 
-  /// main gesture circle widget
-  Widget buildGestureCircle() {
+  Widget _buildGestureCircle() {
     return GestureDetector(
-      /// drag events
-      onPanStart: handleDragStart,
-      onPanUpdate: handleDragUpdate,
-      onPanEnd: handleDragEnd,
-
+      onPanStart: _handleDragStart,
+      onPanUpdate: _handleDragUpdate,
+      onPanEnd: _handleDragEnd,
       child: AnimatedBuilder(
-        animation: scaleAnimation,
+        animation: _scaleAnimation,
         builder: (context, child) {
-          /// normal circle when not dragging
-          if (!isDragging) {
-            return SizedBox(width: 45, height: 45, child: buildNormalCircle());
-          }
-
-          /// expanded circle when dragging
-          return Transform.translate(
-            offset: const Offset(expandedOffsetX, expandedOffsetY),
-
-            child: Transform.scale(
-              scale: scaleAnimation.value,
-
-              child: SizedBox(
-                width: 45,
-                height: 45,
-                child: buildExpandedCircle(),
-              ),
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              width: 70,
+              height: 70,
+              child: _isDragging
+                  ? _buildExpandedCircle()
+                  : _buildNormalCircle(),
             ),
           );
         },
@@ -373,8 +266,7 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
     );
   }
 
-  /// default circle appearance
-  Widget buildNormalCircle() {
+  Widget _buildNormalCircle() {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
@@ -384,89 +276,98 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
           width: 2,
         ),
       ),
-
       child: Icon(
         Icons.add_circle_outline,
         color: Theme.of(context).textTheme.titleSmall?.color,
-        size: 24,
+        size: 28,
       ),
     );
   }
 
-  /// expanded circle that contains gesture segments
-  Widget buildExpandedCircle() {
-    /// get current active segment
-    final activeSegment = getActiveSegment();
+  Widget _buildExpandedCircle() {
+    final activeSegment = _getActiveSegment();
 
     return Stack(
       children: [
-        /// colored circle slices
+        // Draw the 4 segments
         CustomPaint(
-          size: const Size(45, 45),
+          size: Size(70, 50),
           painter: CircleSegmentPainter(activeSegment: activeSegment),
         ),
-
-        /// labels inside segments
-        buildSegmentLabels(activeSegment),
+        // Add labels
+        _buildSegmentLabels(activeSegment),
       ],
     );
   }
 
-  /// build labels for each direction
-  Widget buildSegmentLabels(String activeSegment) {
-    return Stack(
-      children: [
-        buildCenteredLabel(Alignment.topCenter, '?', activeSegment == 'top'),
-        buildCenteredLabel(
-          Alignment.centerRight,
-          'No',
-          activeSegment == 'right',
-        ),
-        buildCenteredLabel(
-          Alignment.centerLeft,
-          'Yes',
-          activeSegment == 'left',
-        ),
-        buildCenteredLabel(
-          Alignment.bottomCenter,
-          'X',
-          activeSegment == 'bottom',
-          isIcon: true,
-        ),
-      ],
-    );
-  }
-
-  /// reusable label builder
-  Widget buildCenteredLabel(
-    Alignment alignment,
-    String label,
-    bool isActive, {
-    bool isIcon = false,
-  }) {
-    /// move labels slightly toward center
-    final targetAlignment = alignment * 0.7;
-
-    return Align(
-      alignment: targetAlignment,
-
-      child: isIcon
-          ? Icon(Icons.close, color: Colors.white, size: isActive ? 8 : 6)
-          : Text(
-              label,
+  /// Segment labels
+  //-- NOTE:
+  //    - the icon is not centered
+  //    - maybe the icon can be center in a diffrent way
+  //    - look up a diffrent method for cordinet
+  Widget _buildSegmentLabels(String activeSegment) {
+    return Container(
+      width: 70,
+      height: 50,
+      child: Stack(
+        children: [
+          // Left - YES (Green)
+          Positioned(
+            left: 5,
+            top: 18,
+            child: Text(
+              'Yes',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: isActive ? 8 : 6,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                fontSize: activeSegment == 'bottom' ? 9 : 7,
+                fontWeight: FontWeight.w400,
               ),
             ),
+          ),
+          // Top - ? (Orange)
+          Positioned(
+            left: 30,
+            top: 0,
+            child: Text(
+              ' ? ',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: activeSegment == 'right' ? 9 : 7,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+          // Right - NO (Red)
+          Positioned(
+            right: 7,
+            top: 19,
+            child: Text(
+              'No',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: activeSegment == 'top' ? 9 : 7,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+          // Bottom - X (Gray)
+          Positioned(
+            left: 31,
+            bottom: 3,
+            child: Icon(
+              Icons.close_rounded,
+              color: Colors.white,
+              size: activeSegment == 'left' ? 9 : 7,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-/// painter that draw the circle divided into 4 gesture segments
+// Custom painter to draw the 4 circle segments
 class CircleSegmentPainter extends CustomPainter {
-  /// currently active segment
   final String activeSegment;
 
   CircleSegmentPainter({required this.activeSegment});
@@ -476,39 +377,198 @@ class CircleSegmentPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    final rect = Rect.fromCircle(center: center, radius: radius);
+    // Define the 4 segments (90 degrees each)
+    _drawSegment(
+      canvas,
+      center,
+      radius,
+      315,
+      90,
+      activeSegment == 'right'
+          ? Colors.orange
+          : Colors.orange.withValues(alpha: 0.6),
+    );
 
-    /// helper function to draw one slice
-    void drawSlice(double startAngle, Color color, bool isActive) {
-      final paint = Paint()
-        ..color = isActive ? color : color.withOpacity(0.6)
-        ..style = PaintingStyle.fill;
+    _drawSegment(
+      canvas,
+      center,
+      radius,
+      45,
+      90,
+      activeSegment == 'top' ? Colors.red : Colors.red.withValues(alpha: 0.6),
+    );
 
-      canvas.drawArc(
-        rect,
-        (startAngle - 90) * math.pi / 180,
-        90 * math.pi / 180,
-        true,
-        paint,
-      );
-    }
+    _drawSegment(
+      canvas,
+      center,
+      radius,
+      135,
+      90,
+      activeSegment == 'left'
+          ? Colors.grey
+          : Colors.grey.withValues(alpha: 0.6),
+    );
 
-    /// draw 4 segments
-    drawSlice(315, Colors.orange, activeSegment == 'top');
-    drawSlice(45, Colors.red, activeSegment == 'right');
-    drawSlice(135, Colors.grey, activeSegment == 'bottom');
-    drawSlice(225, Colors.green, activeSegment == 'left');
+    _drawSegment(
+      canvas,
+      center,
+      radius,
+      225,
+      90,
+      activeSegment == 'bottom'
+          ? Colors.green
+          : Colors.green.withValues(alpha: 0.6),
+    );
 
-    /// outer border
+    // Draw borders between segments
     final borderPaint = Paint()
-      ..color = Colors.white24
+      ..color = Colors.grey
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
+      ..strokeWidth = 1;
 
     canvas.drawCircle(center, radius, borderPaint);
+
+    // Draw dividing lines for 4 segments
+    for (var angle in [45, 135, 225, 315]) {
+      final radians = angle * math.pi / 180;
+      final end = Offset(
+        center.dx + radius * math.cos(radians),
+        center.dy + radius * math.sin(radians),
+      );
+      canvas.drawLine(center, end, borderPaint);
+    }
+  }
+
+  void _drawSegment(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    double startAngle,
+    double sweepAngle,
+    Color color,
+  ) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final startRadians = (startAngle - 90) * math.pi / 180;
+    final sweepRadians = sweepAngle * math.pi / 180;
+
+    canvas.drawArc(rect, startRadians, sweepRadians, true, paint);
   }
 
   @override
-  bool shouldRepaint(CircleSegmentPainter oldDelegate) =>
-      oldDelegate.activeSegment != activeSegment;
+  bool shouldRepaint(CircleSegmentPainter oldDelegate) {
+    return oldDelegate.activeSegment != activeSegment;
+  }
+}
+
+class _CustomMessageSheet extends StatefulWidget {
+  @override
+  State<_CustomMessageSheet> createState() => _CustomMessageSheetState();
+}
+
+class _CustomMessageSheetState extends State<_CustomMessageSheet> {
+  final TextEditingController _messageController = TextEditingController();
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline,
+          width: 1,
+        ),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.outline,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Custom Message',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.tertiaryContainer,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline,
+                  width: 1,
+                ),
+              ),
+              child: TextField(
+                controller: _messageController,
+                autofocus: true,
+                maxLines: 3,
+                style: Theme.of(context).textTheme.bodyMedium,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                  hintText: 'Type your message...',
+                  hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final message = _messageController.text.trim();
+                  if (message.isEmpty) return;
+
+                  final ttsService = context.read<TtsService>();
+                  Navigator.pop(context);
+                  await ttsService.speak(message);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                icon: Icon(Icons.send, size: 20),
+                label: Text(
+                  'Send',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
 }

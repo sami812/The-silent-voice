@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:the_silent_voice/services/tts_service.dart';
 
 /// ### Component 2: list of responce suggesiton
 ///
@@ -23,10 +25,10 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
 
   // just for testing
   final List<String> suggestions = [
-    //'suggestion number 1',
-    //'suggestion number 2',
-    //'suggestion number 3',
-    //'suggestion number 4',
+    'suggestion number 1',
+    'suggestion number 2',
+    'suggestion number 3',
+    'suggestion number 4',
     //'suggestion number 5',
     //'suggestion number 6',
     //'suggestion number 7',
@@ -34,18 +36,22 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
     //'suggestion number 9',
     //'long suggestion ..........................................................................................',
   ];
-  // placeholder function
+
   void _handleTap(String response) {
-    // Send to text-to-speech model (send to the terminal for now)
-    print('Sending to TTS: $response');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        // well be piped to the tts model
-        content: Text('Speaking: $response'),
-        duration: Duration(seconds: 1),
-      ),
-    );
+    context.read<TtsService>().speak(response);
   }
+  // placeholder function (can be removed now)
+  // void _handleTap(String response) {
+  //    // Send to text-to-speech model (send to the terminal for now)
+  //    print('Sending to TTS: $response');
+  //    ScaffoldMessenger.of(context).showSnackBar(
+  //      SnackBar(
+  //        // well be piped to the tts model
+  //        content: Text('Speaking: $response'),
+  //        duration: Duration(seconds: 1),
+  //      ),
+  //    );
+  //  }
 
   void _handleLongPress(String response) {
     setState(() {
@@ -63,10 +69,17 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
 
   void _sendEditedResponse() {
     if (_editController.text.isNotEmpty) {
-      _handleTap(_editController.text);
+      context.read<TtsService>().speak(_editController.text);
       _closeEdit();
     }
   }
+  // placeholder function (can be removed now)
+  //  void _sendEditedResponse() {
+  //    if (_editController.text.isNotEmpty) {
+  //      _handleTap(_editController.text);
+  //      _closeEdit();
+  //    }
+  //  }
 
   @override
   void dispose() {
@@ -88,74 +101,87 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
     /// - appear when long pressed on any suggestion
     /// - provide a `send` or `cancel` as option
 
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('Edit Response', style: Theme.of(context).textTheme.titleSmall),
-          SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline,
-                width: 2,
-              ),
+    return SingleChildScrollView(
+      reverse: true,
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Edit Response',
+              style: Theme.of(context).textTheme.titleSmall,
             ),
-            child: TextField(
-              controller: _editController,
-              autofocus: true,
-              maxLines: 4,
-              style: Theme.of(context).textTheme.bodyMedium,
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.all(16),
-                hintText: 'Edit your response...',
-                hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+            SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline,
+                  width: 2,
                 ),
               ),
-            ),
-          ),
-          SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: _closeEdit,
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-                child: Text(
-                  'Cancel',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-              SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: _sendEditedResponse,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              child: TextField(
+                controller: _editController,
+                autofocus: true,
+                maxLines: 4,
+                style: Theme.of(context).textTheme.bodyMedium,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                  hintText: 'Edit your response...',
+                  hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                   ),
                 ),
-                icon: Icon(Icons.send, size: 18),
-                label: Text(
-                  'Send',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
               ),
-            ],
-          ),
-        ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: _closeEdit,
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  child: Text(
+                    'Cancel',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: _sendEditedResponse,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  icon: Icon(Icons.send, size: 18),
+                  label: Text(
+                    'Send',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }

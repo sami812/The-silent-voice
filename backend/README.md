@@ -9,7 +9,50 @@ This backend service powers the "Smart Chat" interface for The Silent Voice appl
 
 ---
 
+<<<<<<< HEAD
 ##  Deployment & Setup Instructions
+=======
+## API Documentation
+
+
+###  Live Environment (Online)
+* **API Base URL:** `link.onrender.com`
+* **Live Swagger Docs:** `link.onrender.com/docs`
+
+### Endpoint
+`POST /api/process`
+### Endpoint
+POST /api/process
+
+### Request Headers
+Content-Type: application/json
+
+### Request Payload
+The mobile application should send the detected words and the user's context in this format:
+
+{
+  "user_id": "user_123",
+  "user_type": "deaf",
+  "signs": ["hospital", "where", "now"],
+  "location": "street",
+  "is_moving": true
+}
+
+### Response Payload
+The API will return the translated sentence and the recommended UI display mode.
+
+{
+  "status": "success",
+  "display_mode": "avatar",
+  "message": "I am heading to the hospital now, but I am not sure where it is."
+}
+
+## Local Setup Instructions
+
+1. Clone the repository:
+git clone https://github.com/sami812/The-silent-voice.git
+cd The-silent-voice/backend
+>>>>>>> 78ef5d7d4fd8617ccf656b9a752cef737f4a50a0
 
 ### Option 1: Running Locally (For Testing)
 1. Open your terminal in the `backend` folder.
@@ -43,6 +86,7 @@ Since this repository might be private, the owner of the repo should follow thes
 
 ---
 
+<<<<<<< HEAD
 ## API Endpoints
 
 ### 1. Process Signs (Deaf -> Hearing)
@@ -92,3 +136,6 @@ Takes the text spoken/written by the hearing person and generates 4 smart replie
       ]
   }
   ```
+=======
+Access the API documentation at http://127.0.0.1:8000/docs.
+>>>>>>> 78ef5d7d4fd8617ccf656b9a752cef737f4a50a0

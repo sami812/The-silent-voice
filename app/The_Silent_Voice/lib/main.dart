@@ -1,16 +1,20 @@
 import 'dart:io' show Platform;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:the_silent_voice/pages/home_page.dart';
+import 'package:the_silent_voice/pages/login_or_register.dart';
+//import 'package:the_silent_voice/pages/home_page.dart';
+//import 'package:the_silent_voice/pages/login_page.dart';
+//import 'package:the_silent_voice/pages/sign_up_page.dart';
+//import 'package:the_silent_voice/pages/sign_up_page.dart';
 import 'themes/theme_data.dart';
-import 'pages/start_page.dart';
-import 'pages/profile_page.dart';
-import 'pages/history_page.dart';
 import 'package:provider/provider.dart';
 import 'services/stt_service.dart';
-//import 'services/tts_service.dart';
+import 'services/tts_service.dart';
 //firebase is not supported on linux (-__-)
-import 'firebase_options.dart';
+import 'sign/firebase_options.dart';
 
 /// # Main page
 /// - contain all the main class `TheSilentVoice`
@@ -18,6 +22,7 @@ import 'firebase_options.dart';
 /// - SharedPreferences : saves data on the device's internal storage, so the info stays put even if the user closes the app or restarts their phone. Its allows the application to remember the user's selected theme (Light or Dark mode) even after the app is closed and reopened.
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   // fire base only initilized if platform is Android or IOS
   if (Platform.isAndroid || Platform.isIOS) {
     WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +30,10 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   }
-  ;
+
+  //  WidgetsFlutterBinding.ensureInitialized();
+  //  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // await FirebaseAuth.instance.signOut();
   final prefs = await SharedPreferences.getInstance();
   final switched = prefs.getBool('isDarkMode') ?? false;
   runApp(TheSilentVoice(switched: switched));
@@ -65,7 +73,7 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SttService()),
-        //ChangeNotifierProvider(create: (_) => TtsService()),
+        ChangeNotifierProvider(create: (_) => TtsService()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -77,75 +85,30 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
         theme: AppThemeData.light, // Light theme
         darkTheme: AppThemeData.dark, // Dark theme
         themeMode: _themeMode, // follow switch value in the  profile page
-        home: BottomNav(),
-      ),
-    );
-  }
-}
-
-/// ## navigation bar class
-///
-/// - the implemntation for navigation bar
-/// - provide us with a way to move between 3 diffrent pages
-/// - `History Page`, `Start Page`, `Profile Page`
-
-class BottomNav extends StatefulWidget {
-  const BottomNav({super.key});
-  @override
-  State<BottomNav> createState() => _BottomNavState();
-}
-
-/// ### bottom navigation
-///
-/// - we use the variable `selectPage` to move between the page in the navigation bar
-///
-/// - `History Page` : set to `0`
-/// - `Start Page`   : set to `1` (the defualt valus)
-/// - `Profile Page` : set to '2'
-
-class _BottomNavState extends State<BottomNav> {
-  int selectPage = 1;
-  List<Widget> pages = [HistoryPage(), StartPage(), ProfilePage()];
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: pages[selectPage],
-      bottomNavigationBar: Container(
-        height: 100,
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: Theme.of(context).colorScheme.outline,
-              width: 1.5,
-            ),
-          ),
-        ),
-        child: BottomNavigationBar(
-          onTap: (val) {
-            setState(() {
-              selectPage = val;
-            });
-          },
-          currentIndex: selectPage,
-          selectedItemColor: Colors.blue,
-          unselectedItemColor: Colors.grey,
-          selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
-          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w300),
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history_rounded, size: 30),
-              label: "History",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined, size: 30),
-              label: "Home",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outlined, size: 30),
-              label: "Profile",
-            ),
-          ],
-        ),
+        home: (Platform.isAndroid || Platform.isIOS)
+            ? StreamBuilder(
+                stream: FirebaseAuth.instance.authStateChanges(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return const HomePage();
+                  }
+                  return const LoginOrRegister();
+                },
+              )
+            : const HomePage(),
+        //        home: StreamBuilder(
+        //          stream: FirebaseAuth.instance.authStateChanges(),
+        //          builder: (context, snapshot) {
+        //            if (snapshot.hasData) {
+        // final user = FirebaseAuth.instance.currentUser;
+        // if (user != null && user.emailVerified) {
+        //   return const HomePage();
+        // }
+        //              return const HomePage();
+        //            }
+        //            return const LoginOrRegister();
+        //          },
+        //        ),
       ),
     );
   }

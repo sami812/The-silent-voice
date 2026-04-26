@@ -2,7 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:the_silent_voice/main.dart';
-import 'package:the_silent_voice/utils.dart';
+import 'package:the_silent_voice/sign/upload_to_cloudinary.dart';
+import 'package:the_silent_voice/sign/user_cache.dart';
+import 'package:the_silent_voice/services/utils.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// # NoSelectionControls
 /// Custom `TextSelectionControls` to remove any selection handles, toolbar,
@@ -57,11 +61,74 @@ class ProfilePage extends StatefulWidget {
 
 /// ## _ProfilepageState
 /// State class for `Profilepage`. Handles editing of user info, image picking (camera/gallery), theme switching,and taps on settings/preferences.
- 
+
 class _ProfilePageState extends State<ProfilePage> {
   /// ### User Profile Image
   /// Stores the selected profile image as bytes (Uint8List)
   Uint8List? _image;
+  bool editProfileData = false;
+  late final TextEditingController userName;
+  late final TextEditingController userEmail;
+
+  /// ### Default Profile Info
+  String name = "User Name";
+  String email = "user@email.com";
+  String imageUrl = "";
+  bool isloading = true;
+
+  getUserData() async {
+    if (userCache != null) {
+      final data = userCache!;
+      setState(() {
+        name = data['name'] ?? "User Name";
+        email = data['email'] ?? "user@email.com";
+        imageUrl = data['photoUrl'] ?? "";
+        userName.text = name;
+        userEmail.text = email;
+        isloading = false;
+      });
+      return;
+    }
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    final data = doc.data();
+    if (data != null) {
+      setState(() {
+        name = data['name'] ?? "User Name";
+        email = data['email'] ?? "user@email.com";
+        imageUrl = data['photoUrl'] ?? "";
+        userName.text = name;
+        userEmail.text = email;
+        isloading = false;
+      });
+    }
+  }
+
+  updateProfile() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    String photoUrl = imageUrl;
+    if (_image != null) {
+      photoUrl = await uploadToCloudinary(_image!);
+    }
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'name': userName.text,
+      'email': userEmail.text,
+      'photoUrl': photoUrl,
+    });
+    userCache = {
+      'name': userName.text,
+      'email': userEmail.text,
+      'photoUrl': photoUrl,
+    };
+    setState(() {
+      name = userName.text;
+      email = userEmail.text;
+      imageUrl = photoUrl;
+    });
+  }
 
   /// ### selectImage
   /// Opens the image picker to select an image from the given source
@@ -93,6 +160,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   selectImage(ImageSource.camera);
                 },
               ),
+
               /// ### Gallery Option
               ListTile(
                 leading: const Icon(Icons.photo_library),
@@ -108,18 +176,15 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
   }
+
   /// ### Profile Editing Controls
-  bool editProfileData = false;
-  late final TextEditingController userName;
-  late final TextEditingController userEmail;
-  /// ### Default Profile Info
-  String name = "User Name";
-  String email = "user@email.com";
+
   @override
   void initState() {
     super.initState();
     userName = TextEditingController(text: name);
     userEmail = TextEditingController(text: email);
+    getUserData();
   }
 
   @override
@@ -133,6 +198,9 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     /// ### Check Theme Mode
     final switched = Theme.of(context).brightness == Brightness.dark;
+    if (isloading) {
+      return Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     return Scaffold(
       /// ### Body ListView
       /// Scrollable page containing profile sections
@@ -186,6 +254,11 @@ class _ProfilePageState extends State<ProfilePage> {
                             radius: 65,
                             backgroundImage: MemoryImage(_image!),
                           )
+                        : imageUrl.isNotEmpty
+                        ? CircleAvatar(
+                            radius: 65,
+                            backgroundImage: NetworkImage(imageUrl),
+                          )
                         : CircleAvatar(
                             radius: 65,
                             backgroundImage:
@@ -196,8 +269,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       bottom: -10,
                       left: 80,
                       child: IconButton(
-                        onPressed: showImageOptions, // opens camera/gallery options
-                        icon: Icon(Icons.add_a_photo_rounded),
+                        onPressed:
+                            showImageOptions, // opens camera/gallery options
+                        icon: Icon(
+                          Icons.add_a_photo_rounded,
+                          color: const Color.fromARGB(255, 149, 155, 155),
+                        ),
                       ),
                     ),
                   ],
@@ -278,11 +355,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   onPressed: () async {
                     /// Save edits if editing
                     if (editProfileData) {
-                      setState(() {
-                        name = userName.text;
-                        email = userEmail.text;
-                      });
+                      await updateProfile();
                     }
+
                     /// Toggle edit mode
                     setState(() {
                       editProfileData = !editProfileData;
@@ -503,6 +578,40 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                         Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                  child: InkWell(
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    hoverColor: Colors.transparent,
+                    focusColor: Colors.transparent,
+                    onTap: () async {
+                      return await FirebaseAuth.instance.signOut();
+                    },
+                    child: Row(
+                      children: [
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Logout',
+                            style: Theme.of(context).textTheme.displaySmall,
+                          ),
+                        ),
+                        Icon(Icons.logout, color: Colors.grey[400]),
+                        SizedBox(width: 10),
                       ],
                     ),
                   ),
