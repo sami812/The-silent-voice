@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:the_silent_voice/pages/history_page.dart';
 import 'package:the_silent_voice/pages/profile_page.dart';
 import 'package:the_silent_voice/pages/start_page.dart';
-import 'package:the_silent_voice/user_cache.dart';
+import 'package:the_silent_voice/sign/user_cache.dart';
 
 /// ## navigation bar class
 ///
@@ -32,8 +32,11 @@ class _HomePageState extends State<HomePage> {
   Future<void> getData() async {
     if (userCache != null) return;
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-    if(mounted){
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    if (mounted) {
       setState(() {
         userCache = doc.data();
       });
@@ -45,7 +48,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     getData();
   }
-  
+
   // List<Widget> pages = [HistoryPage(), StartPage(), ProfilePage()];
   Widget pages() {
     switch (selectPage) {
@@ -64,8 +67,8 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body:
-        // pages[selectPage],
-        pages(),
+          // pages[selectPage],
+          pages(),
       bottomNavigationBar: Container(
         height: 100,
         decoration: BoxDecoration(

@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:the_silent_voice/user_cache.dart';
+import 'package:the_silent_voice/sign/user_cache.dart';
 
 class LoginPage extends StatefulWidget {
   final void Function()? onTap;
@@ -12,13 +12,11 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  
   bool hidden = true;
   late final TextEditingController userPassword;
   late final TextEditingController userEmail;
 
   String? message;
-  
 
   Future<Map<String, dynamic>?> getUserData() async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
@@ -85,12 +83,12 @@ class _LoginPageState extends State<LoginPage> {
       final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
       if (isNewUser && user != null) {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-                'uid': user.uid,
-                'email': user.email,
-                'name': user.displayName ?? 'user',
-                'photoUrl': user.photoURL,
-                'createdAt': DateTime.now(),
-        });     
+          'uid': user.uid,
+          'email': user.email,
+          'name': user.displayName ?? 'user',
+          'photoUrl': user.photoURL,
+          'createdAt': DateTime.now(),
+        });
       }
       userCache = await getUserData();
       if (!mounted) return;

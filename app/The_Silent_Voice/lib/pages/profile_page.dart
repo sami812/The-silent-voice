@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:the_silent_voice/main.dart';
-import 'package:the_silent_voice/upload_to_cloudinary.dart';
-import 'package:the_silent_voice/user_cache.dart';
-import 'package:the_silent_voice/utils.dart';
+import 'package:the_silent_voice/sign/upload_to_cloudinary.dart';
+import 'package:the_silent_voice/sign/user_cache.dart';
+import 'package:the_silent_voice/services/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -118,7 +118,11 @@ class _ProfilePageState extends State<ProfilePage> {
       'email': userEmail.text,
       'photoUrl': photoUrl,
     });
-    userCache = {'name': userName.text, 'email': userEmail.text, 'photoUrl': photoUrl};
+    userCache = {
+      'name': userName.text,
+      'email': userEmail.text,
+      'photoUrl': photoUrl,
+    };
     setState(() {
       name = userName.text;
       email = userEmail.text;
@@ -594,12 +598,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     highlightColor: Colors.transparent,
                     hoverColor: Colors.transparent,
                     focusColor: Colors.transparent,
-                    onTap: ()async{
+                    onTap: () async {
                       return await FirebaseAuth.instance.signOut();
                     },
                     child: Row(
                       children: [
-                        SizedBox(width:10),
+                        SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'Logout',
@@ -607,7 +611,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                         Icon(Icons.logout, color: Colors.grey[400]),
-                        SizedBox(width:10),
+                        SizedBox(width: 10),
                       ],
                     ),
                   ),

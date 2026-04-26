@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 // import 'package:the_silent_voice/pages/home_page.dart';
-import 'package:the_silent_voice/upload_to_cloudinary.dart';
-import 'package:the_silent_voice/user_cache.dart';
-import 'package:the_silent_voice/utils.dart';
+import 'package:the_silent_voice/sign/upload_to_cloudinary.dart';
+import 'package:the_silent_voice/sign/user_cache.dart';
+import 'package:the_silent_voice/services/utils.dart';
 
 class SignUpPage extends StatefulWidget {
   final void Function()? onTap;
@@ -40,19 +40,19 @@ class _SignUpPageState extends State<SignUpPage> {
       setState(() {
         message = 'Password must be at least 6 characters';
       });
-      return ;
+      return;
     }
     if (userEmail.text.isEmpty || userName.text.isEmpty) {
       setState(() {
         message = 'Please fill in all the fields';
       });
-      return ;
+      return;
     }
     if (_image == null) {
       setState(() {
         message = 'Please select an image';
       });
-      return ;
+      return;
     }
     try {
       UserCredential userCredential = await FirebaseAuth.instance
@@ -74,7 +74,7 @@ class _SignUpPageState extends State<SignUpPage> {
       setState(() {
         message = null;
       });
-      return ;
+      return;
     } on FirebaseAuthException catch (e) {
       setState(() {
         if (e.code == 'email-already-in-use') {
@@ -85,7 +85,7 @@ class _SignUpPageState extends State<SignUpPage> {
           message = 'Invalid email';
         }
       });
-      return ;
+      return;
     }
   }
 
