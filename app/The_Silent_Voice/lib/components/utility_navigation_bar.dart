@@ -464,7 +464,20 @@ class CircleSegmentPainter extends CustomPainter {
   }
 }
 
-class _CustomMessageSheet extends StatelessWidget {
+class _CustomMessageSheet extends StatefulWidget {
+  @override
+  State<_CustomMessageSheet> createState() => _CustomMessageSheetState();
+}
+
+class _CustomMessageSheetState extends State<_CustomMessageSheet> {
+  final TextEditingController _messageController = TextEditingController();
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -508,6 +521,7 @@ class _CustomMessageSheet extends StatelessWidget {
                 ),
               ),
               child: TextField(
+                controller: _messageController,
                 autofocus: true,
                 maxLines: 3,
                 style: Theme.of(context).textTheme.bodyMedium,
@@ -527,11 +541,13 @@ class _CustomMessageSheet extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
+                onPressed: () async {
+                  final message = _messageController.text.trim();
+                  if (message.isEmpty) return;
+
+                  final ttsService = context.read<TtsService>();
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Message sent')));
+                  await ttsService.speak(message);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.secondary,
