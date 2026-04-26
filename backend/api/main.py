@@ -1,59 +1,58 @@
-import sys
-import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import uvicorn
 
-# Fix path issues
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Import schemas and agent functions
+from api.schemas import SignRequest, SignResponse, TextRequest, TextResponse
+from agents.interpreter_agent import translate_signs_agent, suggest_replies_for_deaf_agent
 
-# Import our AI Brain
-from agents.interpreter_agent import InterpreterAgent
+# Initialize FastAPI application
+app = FastAPI(
+    title="The Silent Voice API",
+    description="Backend service for processing sign language and generating smart replies.",
+    version="1.0.0"
+)
 
-app = FastAPI(title="Sign Language Backend API")
-
-# --- CORS Setup (CRITICAL FOR FLUTTER) ---
-# This allows the Flutter app to send requests to this API without security blocks
+# Configure CORS (Cross-Origin Resource Sharing)
+# This is crucial for allowing the Flutter app to communicate with this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins (change to specific domains in production)
+    allow_origins=["*"],  # Allows all origins
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods (POST, GET, etc.)
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers
 )
 
-# Initialize the agent
-interpreter = InterpreterAgent()
+@app.post("/api/process-signs", response_model=SignResponse)
+async def process_signs(request: SignRequest):
+    """
+    Endpoint to process disconnected sign language words.
+    Returns a full sentence and 4 suggested replies.
+    """
+    try:
+        result = translate_signs_agent(request.words)
+        return SignResponse(
+            translated_text=result["translated_text"],
+            suggested_replies=result["suggested_replies"],
+            context_type=result.get("context_type", "Normal")
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
-# Expected data structure
-class SignPayload(BaseModel):
-    user_id: str
-    user_type: str           
-    signs: list[str]         
-    location: str = "unknown"
-    is_moving: bool = False
+@app.post("/api/suggest-replies", response_model=TextResponse)
+async def suggest_replies(request: TextRequest):
+    """
+    Endpoint to process a hearing person's text message.
+    Returns 4 suggested replies for the deaf user.
+    """
+    try:
+        result = suggest_replies_for_deaf_agent(request.text)
+        return TextResponse(
+            suggested_replies=result["suggested_replies"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
-@app.post("/api/process")
-async def process_signs(payload: SignPayload):
-    print(f"--> Received signs from {payload.user_id}: {payload.signs}")
-    
-    context = {
-        "location": payload.location,
-        "is_moving": payload.is_moving
-    }
-    
-    # Process with Groq AI
-    final_text = interpreter.translate(payload.signs, context)
-
-    # Determine UI response
-    display_mode = "avatar" if payload.user_type in ["deaf", "deaf_mute"] else "text"
-    
-    return {
-        "status": "success",
-        "display_mode": display_mode,
-        "message": final_text
-    }
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+# Health check endpoint to verify server is running
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "The Silent Voice API is running successfully."}

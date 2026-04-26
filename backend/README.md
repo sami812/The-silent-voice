@@ -1,65 +1,94 @@
-# Sign Language AI Copilot - Backend API
+# The Silent Voice - Smart Chat Backend API
 
-## Project Overview
-This repository contains the backend API for the Sign Language Copilot system. The system uses a Hybrid Edge-Cloud architecture to ensure speed and privacy.
+This backend service powers the "Smart Chat" interface for The Silent Voice application. Built with FastAPI and the Groq LLM (Llama3), it is designed to process disconnected words from a computer vision model, translate them into natural English sentences, and generate contextual smart replies for both Deaf and Hearing users.
 
-The mobile application processes video locally to detect isolated sign language words. This cloud API receives those isolated words and uses the Groq AI engine (Llama-3 model) to convert them into natural, grammatically correct sentences in real-time.
+## Features
+- **Context-Aware Translation:** Converts raw sign language keywords into grammatically correct English sentences.
+- **Smart Replies Engine:** Generates 4 contextual response suggestions for both parties.
+- **Sentiment/Context Analysis:** Identifies the context of the message (e.g., Emergency, Medical, Casual) to help the frontend adjust UI elements dynamically.
 
-## Technology Stack
-* Web Framework: FastAPI
-* AI Provider: Groq API (Using LPU for low latency)
-* AI Model: llama-3.3-70b-versatile
-* Cloud Hosting: Render
+---
 
-## API Documentation
+##  Deployment & Setup Instructions
 
-
-### 🌍 Live Environment (Online)
-* **API Base URL:** `https://the-silent-voice-xxxx.onrender.com`
-* **Live Swagger Docs:** `https://the-silent-voice-xxxx.onrender.com/docs`
-
-### Endpoint
-`POST /api/process`
-### Endpoint
-POST /api/process
-
-### Request Headers
-Content-Type: application/json
-
-### Request Payload
-The mobile application should send the detected words and the user's context in this format:
-
-{
-  "user_id": "user_123",
-  "user_type": "deaf",
-  "signs": ["hospital", "where", "now"],
-  "location": "street",
-  "is_moving": true
-}
-
-### Response Payload
-The API will return the translated sentence and the recommended UI display mode.
-
-{
-  "status": "success",
-  "display_mode": "avatar",
-  "message": "I am heading to the hospital now, but I am not sure where it is."
-}
-
-## Local Setup Instructions
-
-1. Clone the repository:
-git clone https://github.com/sami812/The-silent-voice.git
-cd The-silent-voice/backend
-
+### Option 1: Running Locally (For Testing)
+1. Open your terminal in the `backend` folder.
 2. Install the required dependencies:
-pip install -r requirements.txt
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Set your Groq API key as an environment variable. Create a file named `.env` in the backend folder and add:
+   ```env
+   GROQ_API_KEY=your_api_key_here
+   ```
+4. Run the FastAPI server:
+   ```bash
+   uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+5. The API documentation will be available at: `http://localhost:8000/docs`
 
-3. Set up environment variables:
-Create a file named .env in the root directory and add your Groq API key:
-GROQ_API_KEY="your_groq_api_key_here"
+### Option 2: Deploying to Render (Production)
+Since this repository might be private, the owner of the repo should follow these steps to deploy the backend:
+1. Go to [Render Dashboard](https://dashboard.render.com/) and click **New +** -> **Web Service**.
+2. Connect this GitHub repository.
+3. Configure the service with the following settings:
+   - **Root Directory:** `backend`
+   - **Runtime:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn api.main:app --host 0.0.0.0 --port $PORT`
+4. Expand **Environment Variables** and add your API Key:
+   - **Key:** `GROQ_API_KEY`
+   - **Value:** `(Insert the Groq API Key here)`
+5. Click **Create Web Service**. Once deployed, copy the provided `onrender.com` URL to use in the Flutter app.
 
-4. Run the development server:
-uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+---
 
-Access the API documentation at http://127.0.0.1:8000/docs.
+## API Endpoints
+
+### 1. Process Signs (Deaf -> Hearing)
+Translates disconnected words captured from sign language into a full sentence and provides 4 suggested replies for the hearing person.
+
+* **URL:** `/api/process-signs`
+* **Method:** `POST`
+* **Request Body:**
+  ```json
+  {
+      "words": ["pain", "stomach", "hospital"]
+  }
+  ```
+* **Response:**
+  ```json
+  {
+      "translated_text": "I feel a severe pain in my stomach and I need to go to the hospital.",
+      "suggested_replies": [
+          "Are you okay? Do you need an ambulance?",
+          "I will take you to the hospital right now.",
+          "When did the pain start?",
+          "Have you taken any medication?"
+      ],
+      "context_type": "Emergency"
+  }
+  ```
+
+### 2. Suggest Replies (Hearing -> Deaf)
+Takes the text spoken/written by the hearing person and generates 4 smart replies for the deaf person to choose from.
+
+* **URL:** `/api/suggest-replies`
+* **Method:** `POST`
+* **Request Body:**
+  ```json
+  {
+      "text": "Your total bill is 150 dollars, sir."
+  }
+  ```
+* **Response:**
+  ```json
+  {
+      "suggested_replies": [
+          "Here you go.",
+          "Can I pay with a credit card?",
+          "That is quite expensive.",
+          "Thank you for your help."
+      ]
+  }
+  ```
