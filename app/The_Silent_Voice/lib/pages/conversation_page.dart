@@ -75,34 +75,34 @@ class _ConversationPageState extends State<ConversationPage> {
             /// Reverse ListView:
             /// - newest messages appear at the bottom
             /// - scroll grows upward
-            Expanded(
-              flex: 3,
-              child: ListView.builder(
-                controller: scroll,
+            //            Expanded(
+            //              flex: 3,
+            //              child: ListView.builder(
+            //                controller: scroll,
 
-                /// reverse list for chat UX
-                reverse: true,
+            /// reverse list for chat UX
+            //               reverse: true,
 
-                /// optimize layout size
-                shrinkWrap: true,
+            /// optimize layout size
+            //               shrinkWrap: true,
 
-                /// prevents overscroll glow
-                physics: const ClampingScrollPhysics(),
-                itemCount: chat.length,
-                itemBuilder: (_, idex) {
-                  /// reverse index to match reversed list
-                  final reverseIdex = chat.length - 1 - idex;
+            /// prevents overscroll glow
+            //                physics: const ClampingScrollPhysics(),
+            //                itemCount: chat.length,
+            //                itemBuilder: (_, idex) {
+            /// reverse index to match reversed list
+            //                  final reverseIdex = chat.length - 1 - idex;
 
-                  /// chat bubble UI
-                  return BubbleSpecialThree(
-                    text: chat[reverseIdex],
-                    color: Color(0xFF1B97F3),
-                    tail: false,
-                    textStyle: TextStyle(color: Colors.white, fontSize: 16),
-                  );
-                },
-              ),
-            ),
+            /// chat bubble UI
+            //                  return BubbleSpecialThree(
+            //                    text: chat[reverseIdex],
+            //                    color: Color(0xFF1B97F3),
+            //                    tail: false,
+            //                    textStyle: TextStyle(color: Colors.white, fontSize: 16),
+            //                  );
+            //                },
+            //              ),
+            //            ),
 
             /// Component 4: Utility Bar
             /// Handles:
@@ -111,14 +111,7 @@ class _ConversationPageState extends State<ConversationPage> {
             /// - saving conversations
             /// Data Flow:
             /// UtilityNavigationBar → callback → update chat list
-            UtilityNavigationBar(
-              onMessageSent: (text) {
-                /// append new message to chat history
-                setState(() {
-                  chat.add(text);
-                });
-              },
-            ),
+            UtilityNavigationBar(),
           ],
         ),
       ),

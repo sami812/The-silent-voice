@@ -12,7 +12,7 @@ import 'package:the_silent_voice/pages/login_or_register.dart';
 import 'themes/theme_data.dart';
 import 'package:provider/provider.dart';
 import 'services/stt_service.dart';
-//import 'services/tts_service.dart';
+import 'services/tts_service.dart';
 //firebase is not supported on linux (-__-)
 import 'sign/firebase_options.dart';
 
