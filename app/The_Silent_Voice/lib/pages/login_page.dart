@@ -29,12 +29,14 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> login() async {
     if (userPassword.text.length < 6) {
+      if(!mounted) return;
       setState(() {
         message = 'Password must be at least 6 characters';
       });
       return;
     }
     if (userEmail.text.isEmpty || userPassword.text.isEmpty) {
+      if(!mounted) return;
       setState(() {
         message = 'Please fill in all the fields';
       });
@@ -46,10 +48,12 @@ class _LoginPageState extends State<LoginPage> {
         password: userPassword.text.trim(),
       );
       userCache = await getUserData();
+      if(!mounted) return;
       setState(() {
         message = null;
       });
     } on FirebaseAuthException catch (e) {
+      if(!mounted) return;
       setState(() {
         if (e.code == 'user-not-found') {
           message = 'User not found';
@@ -81,7 +85,8 @@ class _LoginPageState extends State<LoginPage> {
       );
       final user = userCredential.user;
       final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
-      if (isNewUser && user != null) {
+      if (user == null) return;
+      if (isNewUser) {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'uid': user.uid,
           'email': user.email,
@@ -89,6 +94,41 @@ class _LoginPageState extends State<LoginPage> {
           'photoUrl': user.photoURL,
           'createdAt': DateTime.now(),
         });
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return AlertDialog(
+              title: Center(
+                child: Icon(Icons.check_circle, color: Colors.green, size: 50),
+              ),
+              content: Text(
+                'Welcome to The silent voice, we create a new account for you.',
+                style: TextStyle(color: Colors.black, fontSize: 20),
+              ),
+              actions: [
+                TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.lightBlueAccent,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.all(5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: Text(
+                    'Ok',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            );
+          },
+        );
       }
       userCache = await getUserData();
       if (!mounted) return;
@@ -98,6 +138,50 @@ class _LoginPageState extends State<LoginPage> {
       } else if (e.code == 'invalid-credential') {
         message = 'Invalid credential';
       }
+    }
+  }
+
+  Future<void> forgotPassword() async {
+    if (userEmail.text.trim().isEmpty) {
+      if(!mounted) return;
+      setState(() {
+        message = 'Please enter your email first';
+      });
+      return;
+    }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: userEmail.text.trim(),
+      );
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+            'Password reset link sent',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.black, fontSize: 20),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Ok',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.lightBlueAccent),
+              ),
+            ),
+          ],
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      if(!mounted) return;
+      setState(() {
+        if (e.code == 'user-not-found') {
+          message = 'User not found for that email';
+        }else{
+          message = 'Something went wrong, try again';
+        }
+      });
     }
   }
 
@@ -183,7 +267,7 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     InkWell(
-                      onTap: () {},
+                      onTap: forgotPassword,
                       child: Text(
                         'Forgot Password?',
                         style: TextStyle(color: Colors.grey[600]),

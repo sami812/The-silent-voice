@@ -25,43 +25,41 @@ class _SignUpPageState extends State<SignUpPage> {
 
   String? message;
   Future<Map<String, dynamic>?> getUserData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return null;
-
+    final uid = FirebaseAuth.instance.currentUser!.uid;
     final doc = await FirebaseFirestore.instance
         .collection('users')
-        .doc(user.uid)
-        .get();
+        .doc(uid)
+        .get(const GetOptions(source: Source.server));
     return doc.data();
   }
 
   Future<void> signUp() async {
-    if (userPassword.text.length < 6) {
-      setState(() {
-        message = 'Password must be at least 6 characters';
-      });
-      return;
-    }
-    if (userEmail.text.isEmpty || userName.text.isEmpty) {
-      setState(() {
-        message = 'Please fill in all the fields';
-      });
-      return;
-    }
-    if (_image == null) {
-      setState(() {
-        message = 'Please select an image';
-      });
-      return;
-    }
     try {
-      UserCredential userCredential = await FirebaseAuth.instance
+      if (userPassword.text.length < 6) {
+        setState(() {
+          message = 'Password must be at least 6 characters';
+        });
+        return;
+      }
+      if (userEmail.text.isEmpty || userName.text.isEmpty) {
+        setState(() {
+          message = 'Please fill in all the fields';
+        });
+        return;
+      }
+      if (_image == null) {
+        setState(() {
+          message = 'Please select an image';
+        });
+        return;
+      }
+      final userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
             email: userEmail.text,
             password: userPassword.text,
           );
-      String uid = userCredential.user!.uid;
-      // await user.sendEmailVerification();
+      final uid = userCredential.user!.uid;
+      await userCredential.user!.sendEmailVerification();
       String imageUrl = await uploadToCloudinary(_image!);
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
@@ -71,9 +69,29 @@ class _SignUpPageState extends State<SignUpPage> {
         'createdAt': DateTime.now(),
       });
       userCache = await getUserData();
-      setState(() {
-        message = null;
-      });
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: Center(
+            child: Icon(Icons.mark_email_read, color: Colors.blue, size: 50),
+          ),
+          content: Text(
+            'Verification email sent to ${userEmail.text}\nPlease verify your email before logging in',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18),
+          ),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      );
       return;
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -109,7 +127,7 @@ class _SignUpPageState extends State<SignUpPage> {
       final user = userCredential.user;
       if (user == null) return;
       if (!isNewUser) {
-        await FirebaseAuth.instance.signOut();
+        // await FirebaseAuth.instance.signOut();
         userCache = await getUserData();
         if (!mounted) return;
         setState(() {

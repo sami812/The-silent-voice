@@ -198,9 +198,9 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     /// ### Check Theme Mode
     final switched = Theme.of(context).brightness == Brightness.dark;
-    if (isloading) {
-      return Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    // if (isloading) {
+    //   return Scaffold(body: Center(child: CircularProgressIndicator()));
+    // }
     return Scaffold(
       /// ### Body ListView
       /// Scrollable page containing profile sections

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:the_silent_voice/pages/email_not_verfied_page.dart';
 import 'package:the_silent_voice/pages/home_page.dart';
 import 'package:the_silent_voice/pages/login_or_register.dart';
 //import 'package:the_silent_voice/pages/home_page.dart';
@@ -33,7 +34,6 @@ void main() async {
 
   //  WidgetsFlutterBinding.ensureInitialized();
   //  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // await FirebaseAuth.instance.signOut();
   final prefs = await SharedPreferences.getInstance();
   final switched = prefs.getBool('isDarkMode') ?? false;
   runApp(TheSilentVoice(switched: switched));
@@ -90,25 +90,17 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
                 stream: FirebaseAuth.instance.authStateChanges(),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
+                    final user = snapshot.data!;
+                    final isGoogleUser = user.providerData.any((info) => info.providerId == 'google.com');
+                    if (!isGoogleUser && !user.emailVerified) {
+                      return EmailNotVerfiedPage();
+                    }
                     return const HomePage();
                   }
                   return const LoginOrRegister();
                 },
               )
             : const HomePage(),
-        //        home: StreamBuilder(
-        //          stream: FirebaseAuth.instance.authStateChanges(),
-        //          builder: (context, snapshot) {
-        //            if (snapshot.hasData) {
-        // final user = FirebaseAuth.instance.currentUser;
-        // if (user != null && user.emailVerified) {
-        //   return const HomePage();
-        // }
-        //              return const HomePage();
-        //            }
-        //            return const LoginOrRegister();
-        //          },
-        //        ),
       ),
     );
   }

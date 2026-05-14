@@ -7,7 +7,7 @@ pickImage(ImageSource source)async{
   // ### Create ImagePicker instance
   final ImagePicker imagePicker = ImagePicker();
   // ### Pick an image from the given source
-  XFile? file = await imagePicker.pickImage(source: source);
+  XFile? file = await imagePicker.pickImage(source: source,imageQuality: 30);
   // ### If an image was selected, read it as bytes and return
   if(file != null){
     return await file.readAsBytes();
