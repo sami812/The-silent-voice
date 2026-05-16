@@ -105,14 +105,14 @@ class SttService extends ChangeNotifier {
   /// Callback when speech is recognized
   void _onSpeechResult(SpeechRecognitionResult result) {
     _currentText = result.recognizedWords;
-
     // When user finishes speaking, add to history
     if (result.finalResult && _currentText.isNotEmpty) {
       _conversationHistory.add(_currentText);
+      notifyListeners(); // notify before clearing
       _currentText = ''; // clear current text after saving to history
+    } else {
+      notifyListeners(); // update UI with new text
     }
-
-    notifyListeners(); // update UI with new text
   }
 
   /// Clear all conversation data
