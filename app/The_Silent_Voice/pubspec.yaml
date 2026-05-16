@@ -52,6 +52,7 @@ dependencies:
   awesome_dialog: ^3.3.0
   http: ^1.2.0
   flutter_dotenv: ^5.1.0
+  intl: ^0.20.2
 
 dev_dependencies:
   change_app_package_name: ^1.1.0

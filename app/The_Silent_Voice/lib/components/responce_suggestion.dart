@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:the_silent_voice/components/chat_message.dart';
+import 'package:the_silent_voice/services/history_service.dart';
+import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/tts_service.dart';
 import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/ai_service.dart';
@@ -40,7 +43,7 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
     final text = stt.currentText.isNotEmpty
         ? stt.currentText
         : stt.conversationHistory.isNotEmpty
-        ? stt.conversationHistory.last
+        ? stt.conversationHistory.last.text
         : '';
     if (text.isNotEmpty) {
       _updateSuggestions(text);
@@ -50,8 +53,16 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
   /// fetch AI suggestions based on what the hearing person said
   Future<void> _updateSuggestions(String heardText) async {
     setState(() => _isLoading = true);
-    final history = context.read<SttService>().conversationHistory;
+
+    // extract just the text from ChatMessage objects
+    final history = context
+        .read<SttService>()
+        .conversationHistory
+        .map((msg) => msg.text) // 👈 get text from ChatMessage
+        .toList();
+
     final results = await AiService.getSuggestions(heardText, history: history);
+
     setState(() {
       suggestions = results;
       _isLoading = false;
@@ -59,6 +70,13 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
   }
 
   void _handleTap(String response) {
+    final message = ChatMessage(
+      text: response,
+      sender: MessageSender.me,
+      time: DateTime.now(),
+    );
+    context.read<SttService>().addMyMessage(message);
+    context.read<ConversationHistoryService>().addMessage(message);
     context.read<TtsService>().speak(response);
   }
 
