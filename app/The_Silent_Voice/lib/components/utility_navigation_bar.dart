@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:the_silent_voice/components/chat_message.dart';
+import 'package:the_silent_voice/services/history_service.dart';
+import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/tts_service.dart';
 import 'dart:math' as math;
 
@@ -51,8 +54,8 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
   }
 
   /// this method allow us to save conversation
-  void _handleSaveConversation() {
-    print('Saving conversation to history');
+  Future<void> _handleSaveConversation() async {
+    await context.read<ConversationHistoryService>().endSession();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Conversation saved to history'),
@@ -63,7 +66,6 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
 
   /// this method allow us to type cusstom massage using the keyboard
   void _handleOpenKeyboard() {
-    print('Opening keyboard for custom message');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -74,6 +76,13 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
 
   /// method for sending message
   void _sendToTTS(String message) {
+    final messageObj = ChatMessage(
+      text: message,
+      sender: MessageSender.me,
+      time: DateTime.now(),
+    );
+    context.read<SttService>().addMyMessage(messageObj);
+    context.read<ConversationHistoryService>().addMessage(messageObj);
     context.read<TtsService>().speak(message);
   }
   //  void _sendToTTS(String message) {
@@ -544,10 +553,15 @@ class _CustomMessageSheetState extends State<_CustomMessageSheet> {
                 onPressed: () async {
                   final message = _messageController.text.trim();
                   if (message.isEmpty) return;
-
-                  final ttsService = context.read<TtsService>();
+                  final messageObj = ChatMessage(
+                    text: message,
+                    sender: MessageSender.me,
+                    time: DateTime.now(),
+                  );
+                  context.read<SttService>().addMyMessage(messageObj);
+                  context.read<ConversationHistoryService>().addMessage(messageObj);
                   Navigator.pop(context);
-                  await ttsService.speak(message);
+                  await context.read<TtsService>().speak(message);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.secondary,

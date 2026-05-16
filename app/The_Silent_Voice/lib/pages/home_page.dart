@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:the_silent_voice/pages/history_page.dart';
 import 'package:the_silent_voice/pages/profile_page.dart';
 import 'package:the_silent_voice/pages/start_page.dart';
+import 'package:the_silent_voice/services/history_service.dart';
 import 'package:the_silent_voice/sign/user_cache.dart';
 
 /// ## navigation bar class
@@ -47,6 +49,10 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     getData();
+    // Load the history when the page opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ConversationHistoryService>().loadSessions();
+    });
   }
 
   // List<Widget> pages = [HistoryPage(), StartPage(), ProfilePage()];

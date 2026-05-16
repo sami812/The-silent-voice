@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:the_silent_voice/components/chat_message.dart';
+import 'package:the_silent_voice/services/history_service.dart';
+import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/tts_service.dart';
 
 /// ### Component 2: list of responce suggesiton
@@ -38,6 +41,13 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
   ];
 
   void _handleTap(String response) {
+    final message = ChatMessage(
+      text: response,
+      sender: MessageSender.me,
+      time: DateTime.now(),
+    );
+    context.read<SttService>().addMyMessage(message);
+    context.read<ConversationHistoryService>().addMessage(message);
     context.read<TtsService>().speak(response);
   }
   // placeholder function (can be removed now)

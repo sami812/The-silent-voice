@@ -6,10 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:the_silent_voice/pages/email_not_verfied_page.dart';
 import 'package:the_silent_voice/pages/home_page.dart';
 import 'package:the_silent_voice/pages/login_or_register.dart';
-//import 'package:the_silent_voice/pages/home_page.dart';
-//import 'package:the_silent_voice/pages/login_page.dart';
-//import 'package:the_silent_voice/pages/sign_up_page.dart';
-//import 'package:the_silent_voice/pages/sign_up_page.dart';
+import 'package:the_silent_voice/services/history_service.dart';
 import 'themes/theme_data.dart';
 import 'package:provider/provider.dart';
 import 'services/stt_service.dart';
@@ -72,8 +69,15 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => SttService()),
         ChangeNotifierProvider(create: (_) => TtsService()),
+        ChangeNotifierProvider(create: (_) => ConversationHistoryService()),
+        ChangeNotifierProxyProvider<ConversationHistoryService, SttService>(
+          create: (_) => SttService(),
+          update: (_, historyService, sttService) {
+            sttService!.setHistoryService(historyService);
+            return sttService;
+          },
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

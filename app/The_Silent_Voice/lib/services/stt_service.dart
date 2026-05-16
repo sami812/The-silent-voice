@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
+import 'package:the_silent_voice/components/chat_message.dart';
+import 'package:the_silent_voice/services/history_service.dart';
 
 /// ## Speech To Text Service
 ///
@@ -13,18 +15,22 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 
 class SttService extends ChangeNotifier {
   final SpeechToText _speechToText = SpeechToText();
+  ConversationHistoryService? historyService;
 
   bool _isListening = false;
   bool _isAvailable = false;
   String _currentText = '';
-  List<String> _conversationHistory = [];
+  List<ChatMessage> _conversationHistory = [];
 
   // Getters
   bool get isListening => _isListening;
   bool get isAvailable => _isAvailable;
   String get currentText => _currentText;
-  List<String> get conversationHistory => _conversationHistory;
+  List<ChatMessage> get conversationHistory => _conversationHistory;
 
+  void setHistoryService(ConversationHistoryService service) {
+    historyService = service;
+  }
   /// initialize STT - must be called before using
   /// requests microphone permission automatically
   /// and handle if microphone is not working
@@ -108,12 +114,22 @@ class SttService extends ChangeNotifier {
 
     // When user finishes speaking, add to history
     if (result.finalResult && _currentText.isNotEmpty) {
-      _conversationHistory.add(_currentText);
-      _currentText = ''; // clear current text after saving to history
+      final msg = ChatMessage(
+        text: _currentText,
+        sender: MessageSender.other, 
+        time: DateTime.now(),
+      );
+      _conversationHistory.add(msg);
+      historyService?.addMessage(msg);
+      _currentText = '';
     }
-
     notifyListeners(); // update UI with new text
   }
+
+  void addMyMessage(ChatMessage message) {
+  conversationHistory.add(message);
+  notifyListeners();
+}
 
   /// Clear all conversation data
   void clearHistory() {
@@ -124,7 +140,7 @@ class SttService extends ChangeNotifier {
 
   /// Get the full conversation as a single string
   String getFullConversation() {
-    return _conversationHistory.join('\n');
+    return _conversationHistory.map((m) => '${m.sender.name}: ${m.text}').join('\n');
   }
 
   /// Check if STT is currently active

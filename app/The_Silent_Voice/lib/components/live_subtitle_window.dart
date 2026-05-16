@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:the_silent_voice/components/chat_message.dart';
 import 'package:the_silent_voice/services/stt_service.dart';
 
 /// ### Component 1: Live Subtitle Display
@@ -134,11 +135,13 @@ class _LiveSubtitleWindowState extends State<LiveSubtitleWindow> {
   }
 
   Widget _buildTextContent(BuildContext context, SttService sttService) {
-    // Check if there's any content
-    final hasHistory = sttService.conversationHistory.isNotEmpty;
+    final subtitleMessages = sttService.conversationHistory
+        .where((message) => message.sender == MessageSender.other)
+        .toList();
+
+    final hasHistory = subtitleMessages.isNotEmpty;
     final hasCurrentText = sttService.currentText.isNotEmpty;
 
-    // If no content at all, show placeholder
     if (!hasHistory && !hasCurrentText) {
       return Align(
         alignment: Alignment.topLeft,
@@ -154,11 +157,8 @@ class _LiveSubtitleWindowState extends State<LiveSubtitleWindow> {
       );
     }
 
-    // Build the list of text lines
-    // History = completed sentences
-    // CurrentText = sentence being spoken right now (shown in italic)
     final allLines = [
-      ...sttService.conversationHistory,
+      ...subtitleMessages,
       if (hasCurrentText) sttService.currentText,
     ];
 
@@ -167,17 +167,16 @@ class _LiveSubtitleWindowState extends State<LiveSubtitleWindow> {
       padding: EdgeInsets.all(16),
       itemCount: allLines.length,
       itemBuilder: (context, index) {
-        // Check if this is the current (partial) text
         final isCurrentText = index == allLines.length - 1 && hasCurrentText;
 
         return Padding(
           padding: EdgeInsets.only(bottom: 12),
           child: Text(
-            allLines[index],
+            isCurrentText
+                ? sttService.currentText
+                : (allLines[index] as ChatMessage).text,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              // Current text is italic to show it's still being spoken
               fontStyle: isCurrentText ? FontStyle.italic : FontStyle.normal,
-              // Current text has accent color
               color: isCurrentText
                   ? Theme.of(context).colorScheme.secondary
                   : null,
