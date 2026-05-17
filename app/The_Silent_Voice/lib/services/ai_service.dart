@@ -16,7 +16,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class AiService {
   static String get _apiKey => dotenv.env['GROQ_API_KEY'] ?? '';
   static const String _url = 'https://api.groq.com/openai/v1/chat/completions';
-  static const String _model = 'llama3-70b-8192';
+  static const String _model = 'llama-3.3-70b-versatile';
 
   static Future<List<String>> getSuggestions(
     String heardText, {

@@ -4,7 +4,6 @@ import 'package:the_silent_voice/components/chat_message.dart';
 import 'package:the_silent_voice/services/history_service.dart';
 import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/tts_service.dart';
-import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/ai_service.dart';
 
 /// ### Component 2: list of responce suggesiton
@@ -58,7 +57,8 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
     final history = context
         .read<SttService>()
         .conversationHistory
-        .map((msg) => msg.text) // 👈 get text from ChatMessage
+        .where((msg) => msg.sender == MessageSender.other)
+        .map((msg) => msg.text)
         .toList();
 
     final results = await AiService.getSuggestions(heardText, history: history);
