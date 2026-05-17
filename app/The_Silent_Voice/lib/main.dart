@@ -7,13 +7,14 @@ import 'package:the_silent_voice/pages/email_not_verfied_page.dart';
 import 'package:the_silent_voice/pages/home_page.dart';
 import 'package:the_silent_voice/pages/login_or_register.dart';
 import 'package:the_silent_voice/services/history_service.dart';
+// import 'package:the_silent_voice/pages/video_chat_page.dart';
 import 'themes/theme_data.dart';
 import 'package:provider/provider.dart';
 import 'services/stt_service.dart';
 import 'services/tts_service.dart';
 //firebase is not supported on linux (-__-)
 import 'sign/firebase_options.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+// import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// # Main page
 /// - contain all the main class `TheSilentVoice`
@@ -22,7 +23,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
+  // await dotenv.load(fileName: '.env');
   // fire base only initilized if platform is Android or IOS
   if (Platform.isAndroid || Platform.isIOS) {
     WidgetsFlutterBinding.ensureInitialized();
@@ -91,7 +92,9 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
         theme: AppThemeData.light, // Light theme
         darkTheme: AppThemeData.dark, // Dark theme
         themeMode: _themeMode, // follow switch value in the  profile page
-        home: (Platform.isAndroid || Platform.isIOS)
+        home: 
+        // VideoChatPage(),
+        (Platform.isAndroid || Platform.isIOS)
             ? StreamBuilder(
                 stream: FirebaseAuth.instance.authStateChanges(),
                 builder: (context, snapshot) {
