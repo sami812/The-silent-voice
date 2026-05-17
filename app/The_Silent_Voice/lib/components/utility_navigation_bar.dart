@@ -143,7 +143,6 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
       _sendToTTS('Yes');
     } else {
       // Bottom segment - Cancel
-      print('Operation cancelled'); // well get deleted
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Cancelled'),

@@ -45,6 +45,7 @@ dependencies:
   # https://pub.dev/packages/cupertino_icons
   firebase_core: ^4.5.0
   image_picker: ^1.2.1
+  camera: ^0.10.5
   chat_bubbles: ^1.9.0
   firebase_auth: ^6.3.0
   google_sign_in: ^6.1.0
@@ -84,7 +85,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/icons/
-    - .env
+    # - .env
     # chat.png
     # - assets/icons/note.png
     # - assets/icons/microphone.png

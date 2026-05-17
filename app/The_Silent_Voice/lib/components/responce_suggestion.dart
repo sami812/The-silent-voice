@@ -29,11 +29,13 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
 
   List<String> suggestions = [];
   bool _isLoading = false;
+  late SttService stt;
 
   @override
   void initState() {
     super.initState();
-    context.read<SttService>().addListener(_onSttChanged);
+    stt = context.read<SttService>();
+    stt.addListener(_onSttChanged);
   }
 
   /// called whenever STT text changes
@@ -103,7 +105,7 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
 
   @override
   void dispose() {
-    context.read<SttService>().removeListener(_onSttChanged);
+    stt.removeListener(_onSttChanged);
     _editController.dispose();
     super.dispose();
   }
