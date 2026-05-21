@@ -6,13 +6,13 @@ import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/tts_service.dart';
 import 'package:the_silent_voice/services/ai_service.dart';
 
-/// ### Component 2: list of responce suggesiton
+/// ### Component 2: list of response suggestion
 ///
-/// - an empty space in the screan
+/// - an empty space in the screen
 /// - it take it input from an AI agent to create suggestion
-/// - you get 1 or more suggestion bassed on the context
-/// - the suggestion is in the shape of a speach bubble
-/// - you can tap the bubble to send the conntent to a text-to-speach model
+/// - you get 1 or more suggestion based on the context
+/// - the suggestion is in the shape of a speech bubble
+/// - you can tap the bubble to send the content to a text-to-speech model
 /// - you can continue the tap to go into an edit mode for the text
 /// - in the edit mode you open the keyboard to manually edit the text
 ///

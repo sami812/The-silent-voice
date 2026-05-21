@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
-import 'package:the_silent_voice/pages/email_not_verfied_page.dart';
+import 'package:the_silent_voice/pages/email_verification_page.dart';
 import 'package:the_silent_voice/pages/home_page.dart';
 import 'package:the_silent_voice/pages/login_or_register.dart';
 import 'package:the_silent_voice/services/history_service.dart';
@@ -86,7 +86,7 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
         debugShowCheckedModeBanner: false,
 
         /// ## App Theme
-        /// - by defualt the app should follow the phone theme
+        /// - by default the app should follow the phone theme
         /// - the value of all the theme is stored at the `themes/themedata.dart`
         /// - we should add a way to over ride this theme in the profile page => done
         theme: AppThemeData.light, // Light theme
@@ -104,7 +104,7 @@ class _TheSilentVoiceState extends State<TheSilentVoice> {
                       (info) => info.providerId == 'google.com',
                     );
                     if (!isGoogleUser && !user.emailVerified) {
-                      return EmailNotVerfiedPage();
+                      return EmailVerificationPage();
                     }
                     return const HomePage();
                   }

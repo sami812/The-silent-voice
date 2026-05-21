@@ -43,6 +43,7 @@ class AppThemeData {
       primaryContainer: Colors.white,
       tertiaryContainer: Colors.grey[100],
       outline: Colors.grey[300],
+      primary: Colors.blue,
     ),
     /// Text Theme
     textTheme: TextTheme(
@@ -110,6 +111,7 @@ class AppThemeData {
       primaryContainer:  Color(0xFF1B1F34),
       tertiaryContainer:Color(0xFF1B1F34),
       outline: Colors.grey[800],
+      primary: Color(0xFF0A0E1A),
     ),
     /// Text Theme
     textTheme: TextTheme(

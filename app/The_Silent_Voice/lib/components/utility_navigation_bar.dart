@@ -8,18 +8,18 @@ import 'dart:math' as math;
 
 /// ### Component 3: utility bar
 ///
-/// - is a similer to navigation bar at the bottom of the screan
-/// - it contain 2 button at the side and a circle in the midle
+/// - is a smeller to navigation bar at the bottom of the screen
+/// - it contain 2 button at the side and a circle in the middle
 /// - the button on the left make that you save the conversation in history
-/// - the button on the rigth open the keyboard to write a custom massage
-/// - the circle in the middle have a special functonality that is
+/// - the button on the right open the keyboard to write a custom massage
+/// - the circle in the middle have a special functionality that is
 ///     - if you hover it then swipe to the left it output "yes"
-///     - if you hover it then swipe to the rigth it output "no"
-///     - if you hover it then swipe up it output a "?" and ask to "repeat what he sayed again"
+///     - if you hover it then swipe to the right it output "no"
+///     - if you hover it then swipe up it output a "?" and ask to "repeat what he said again"
 ///     - if you hover it then swipe down it cancels the operation
-/// - all output got to the seame text-to-speach model
+/// - all output got to the same text-to-speech model
 
-// note: might rewrite the entire page later (not a good implementaiton)
+// note: might rewrite the entire page later (not a good implementation)
 
 class UtilityNavigationBar extends StatefulWidget {
   const UtilityNavigationBar({super.key});
@@ -64,7 +64,7 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
     );
   }
 
-  /// this method allow us to type cusstom massage using the keyboard
+  /// this method allow us to type custom massage using the keyboard
   void _handleOpenKeyboard() {
     showModalBottomSheet(
       context: context,
@@ -311,8 +311,8 @@ class _UtilityNavigationBarState extends State<UtilityNavigationBar>
   /// Segment labels
   //-- NOTE:
   //    - the icon is not centered
-  //    - maybe the icon can be center in a diffrent way
-  //    - look up a diffrent method for cordinet
+  //    - maybe the icon can be center in a different way
+  //    - look up a different method for cordite
   Widget _buildSegmentLabels(String activeSegment) {
     return Container(
       width: 70,

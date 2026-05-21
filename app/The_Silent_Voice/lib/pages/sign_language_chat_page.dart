@@ -1,7 +1,9 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:the_silent_voice/components/chat_message.dart';
 import 'package:the_silent_voice/components/live_subtitle_window.dart';
+import 'package:the_silent_voice/services/history_service.dart';
 import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/tts_service.dart';
 
@@ -24,6 +26,7 @@ class _VideoChatPageState extends State<VideoChatPage> {
   void initState() {
     super.initState();
     initCamera();
+    context.read<ConversationHistoryService>().startSession();
   }
 
   @override
@@ -84,6 +87,14 @@ class _VideoChatPageState extends State<VideoChatPage> {
         isAnalyzing = false;
         signTranslation = result;
       });
+      if (mounted) {
+        final msg = ChatMessage(
+          text: result,
+          sender: MessageSender.me,
+          time: DateTime.now(),
+        );
+        context.read<ConversationHistoryService>().addMessage(msg);
+      }
       if (mounted) await context.read<TtsService>().speak(result);
     } on CameraException catch (e) {
       setState(() => isAnalyzing = false);
@@ -107,8 +118,9 @@ class _VideoChatPageState extends State<VideoChatPage> {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
-        await context.read<SttService>().stopListening();
         FocusManager.instance.primaryFocus?.unfocus();
+        await context.read<ConversationHistoryService>().endSession();
+        context.read<SttService>().clearHistory();
         await Future.delayed(const Duration(milliseconds: 200));
         if (context.mounted) Navigator.of(context).pop();
       },

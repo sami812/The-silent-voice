@@ -2,14 +2,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:the_silent_voice/pages/home_page.dart';
 
-class EmailNotVerfiedPage extends StatefulWidget {
-  const EmailNotVerfiedPage({super.key});
+class EmailVerificationPage extends StatefulWidget {
+  const EmailVerificationPage({super.key});
 
   @override
-  State<EmailNotVerfiedPage> createState() => _EmailNotVerfiedPageState();
+  State<EmailVerificationPage> createState() => _EmailVerificationPageState();
 }
 
-class _EmailNotVerfiedPageState extends State<EmailNotVerfiedPage> {
+class _EmailVerificationPageState extends State<EmailVerificationPage> {
   bool sent = false;
   Future<void> resentEmail() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -23,12 +23,13 @@ class _EmailNotVerfiedPageState extends State<EmailNotVerfiedPage> {
     final user = FirebaseAuth.instance.currentUser;
     await user?.reload();
     if (user?.emailVerified == true) {
-      if(!mounted) return;
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomePage()),
       );
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Email not verified yet, please check your email'),
@@ -69,23 +70,45 @@ class _EmailNotVerfiedPageState extends State<EmailNotVerfiedPage> {
                   backgroundColor: Colors.blue,
                   minimumSize: Size(250, 50),
                 ),
-                child: const Text('I’ve checked', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'I’ve checked',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
-              SizedBox(height: 25,),
+              SizedBox(height: 25),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  if(sent)
-                    Text('Email sent!',style: TextStyle(color: Colors.green),)
-        
-                  else 
-                    TextButton(onPressed: resentEmail, child: Text('Resend Email',style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 17,),)),
+                  if (sent)
+                    Text('Email sent!', style: TextStyle(color: Colors.green))
+                  else
+                    TextButton(
+                      onPressed: resentEmail,
+                      child: Text(
+                        'Resend Email',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                        ),
+                      ),
+                    ),
 
-                  TextButton(onPressed: () async {
-                    await FirebaseAuth.instance.signOut();
-                  }, child: Text('Sign out',style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 18,),)),
+                  TextButton(
+                    onPressed: () async {
+                      await FirebaseAuth.instance.signOut();
+                    },
+                    child: Text(
+                      'Sign out',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
                 ],
-              )
+              ),
             ],
           ),
         ),

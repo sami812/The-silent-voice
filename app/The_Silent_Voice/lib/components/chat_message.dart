@@ -1,5 +1,4 @@
 enum MessageSender {me, other}
-
 class ChatMessage {
   final String text;
   final MessageSender sender;

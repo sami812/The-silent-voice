@@ -159,12 +159,12 @@ class _HistoryPageState extends State<HistoryPage> {
               ] else ...[
                 Row(
                   children: [
-                    Icon(Icons.person_outline, size: 16, color: Colors.black),
+                    Icon(Icons.person_outline, size: 16, color:Colors.grey[600]),
                     const SizedBox(width: 6),
                     Text(
                       'Unknown',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color.fromARGB(255, 92, 91, 91),
+                        color:Colors.grey[400],
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -200,11 +200,9 @@ class _HistoryPageState extends State<HistoryPage> {
               ],
 
               Divider(),
-              if (session.messages.any((m) => m.sender == MessageSender.other)) ...[
+              if (session.messages.isNotEmpty) ...[
                 Text(
-                  session.messages
-                      .firstWhere((m) => m.sender == MessageSender.other)
-                      .text,
+                  session.messages.first.text,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium,
@@ -232,14 +230,16 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Widget _buildStat(BuildContext context, IconData icon, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final grayColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
     return Row(
       children: [
-        Icon(icon, size: 14, color: Theme.of(context).colorScheme.outline),
+        Icon(icon, size: 14, color:grayColor),
         const SizedBox(width: 4),
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.outline,
+            color: grayColor,
           ),
         ),
       ],
@@ -251,6 +251,7 @@ class _HistoryPageState extends State<HistoryPage> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Person\'s Name', style: Theme.of(context).textTheme.titleMedium),
         content: TextField(
@@ -265,7 +266,7 @@ class _HistoryPageState extends State<HistoryPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel', style: TextStyle(color: Colors.black)),
+            child: Text('Cancel', style: Theme.of(context).textTheme.bodyMedium),
           ),
           ElevatedButton(
             onPressed: () {
@@ -276,8 +277,9 @@ class _HistoryPageState extends State<HistoryPage> {
             },
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              backgroundColor: Theme.of(context).colorScheme.secondary,
             ),
-            child: const Text('Save', style: TextStyle(color: Colors.black)),
+            child: Text('Save', style: Theme.of(context).textTheme.titleSmall),
           ),
         ],
       ),
@@ -310,6 +312,7 @@ class _HistoryPageState extends State<HistoryPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),

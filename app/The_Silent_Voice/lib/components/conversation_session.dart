@@ -23,6 +23,11 @@ class ConversationSession {
   List<String> get myMessages =>
       messages.where((m) => m.sender == MessageSender.me).map((m) => m.text).toList();
 
+  List<String> get signMessages =>
+      messages.where((m) => m.sender == MessageSender.me).map((m) => m.text).toList();
+
+  List<String> get speechMessages =>
+      messages.where((m) => m.sender == MessageSender.other).map((m) => m.text).toList();
   Map<String, dynamic> toJson() => {
     'id': id,
     'startTime': startTime.toIso8601String(),

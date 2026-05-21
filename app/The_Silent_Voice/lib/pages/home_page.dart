@@ -10,8 +10,8 @@ import 'package:the_silent_voice/sign/user_cache.dart';
 
 /// ## navigation bar class
 ///
-/// - the implemntation for navigation bar
-/// - provide us with a way to move between 3 diffrent pages
+/// - the implementation for navigation bar
+/// - provide us with a way to move between 3 different pages
 /// - `History Page`, `Start Page`, `Profile Page`
 
 class HomePage extends StatefulWidget {
@@ -25,7 +25,7 @@ class HomePage extends StatefulWidget {
 /// - we use the variable `selectPage` to move between the page in the navigation bar
 ///
 /// - `History Page` : set to `0`
-/// - `Start Page`   : set to `1` (the defualt valus)
+/// - `Start Page`   : set to `1` (the default values)
 /// - `Profile Page` : set to '2'
 
 class _HomePageState extends State<HomePage> {
