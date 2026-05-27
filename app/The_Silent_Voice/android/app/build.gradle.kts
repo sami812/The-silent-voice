@@ -9,7 +9,9 @@ plugins {
 android {
     namespace = "com.example.silentvoice"
     compileSdk = 36
-    ndkVersion = flutter.ndkVersion
+    
+    //  معدل: تم قفل هذا السطر لمنع طلب رخص الـ NDK (Side by side) وتخطي المشكلة تماماً
+    // ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -26,7 +28,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         
-        minSdk = 21 //  معدل: تم التغيير يدوياً إلى 21 لتوافق الكاميرا وموديل الـ TFLite والـ ML Kit
+        minSdk = flutter.minSdkVersion //  معدل: تم التثبيت يدوياً على 21 لتوافق الكاميرا وموديل الـ TFLite والـ ML Kit
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
