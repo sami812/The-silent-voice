@@ -54,7 +54,10 @@ dependencies:
   http: ^1.2.0
   flutter_dotenv: ^5.1.0
   intl: ^0.20.2
-
+  tflite_v2: ^1.0.0 #تشغيل الموديل 
+  google_mlkit_commons: ^0.11.1 
+  google_mlkit_digital_ink_recognition:
+  
 dev_dependencies:
   change_app_package_name: ^1.1.0
   flutter_launcher_icons: ^0.14.1
@@ -86,6 +89,8 @@ flutter:
   assets:
     - assets/icons/
     - .env
+    - assets/model/model.tflite  #موديل الاشارة
+    - assets/model/labels.txt    # اسماءالاشارات  
     # chat.png
     # - assets/icons/note.png
     # - assets/icons/microphone.png
