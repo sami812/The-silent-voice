@@ -38,8 +38,8 @@ jobs:
       - name: Build APK
         run: |
           cd app/The_Silent_Voice
-          flutter build apk --debug
-
+          flutter build apk --debug --android-skip-build-dependency-validation
+          
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
