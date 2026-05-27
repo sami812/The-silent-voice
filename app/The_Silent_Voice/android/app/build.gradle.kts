@@ -25,11 +25,13 @@ android {
         applicationId = "com.example.silentvoice"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        
+        minSdk = 21 //  معدل: تم التغيير يدوياً إلى 21 لتوافق الكاميرا وموديل الـ TFLite والـ ML Kit
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        multiDexEnabled = true
+        
+        multiDexEnabled = true //  معدل: للتأكيد على تفعيلها لحماية التطبيق من كراش حجم الداتا الكبير
     }
 
     buildTypes {
