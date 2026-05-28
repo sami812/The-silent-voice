@@ -7,7 +7,6 @@ import 'package:the_silent_voice/components/live_subtitle_window.dart';
 import 'package:the_silent_voice/services/history_service.dart';
 import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/tts_service.dart';
-import 'package:tflite_v2/tflite_v2.dart';
 import 'package:google_mlkit_commons/google_mlkit_commons.dart';
 
 class VideoChatPage extends StatefulWidget {
