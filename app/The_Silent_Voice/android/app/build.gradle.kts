@@ -10,8 +10,8 @@ android {
     namespace = "com.example.silentvoice"
     compileSdk = 36
     
-    //  معدل: تم قفل هذا السطر لمنع طلب رخص الـ NDK (Side by side) وتخطي المشكلة تماماً
-    // ndkVersion = flutter.ndkVersion
+    //  معدل: تم تثبيت نسخة الـ NDK اللي طلبتها مكتبة speech_to_text عشان الإيرور التحذيري يختفي
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -47,4 +47,15 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// معدل: الكود السحري لحل مشكلة tflite_v2 والـ Namespace أوتوماتيكياً
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            if (project.android.namespace == null) {
+                project.android.namespace = project.android.defaultConfig.applicationId
+            }
+        }
+    }
 }
