@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'conversation_page.dart';
+import 'package:the_silent_voice/pages/sign_language_chat_page.dart';
+import 'typing_chat_page.dart';
 
 /// # Start Page
 /// `StartPage` is the main landing page of the app. It shows the app logo, title, description,
@@ -52,7 +53,7 @@ class StartPage extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
 
-            const SizedBox(height: 80),
+            const SizedBox(height: 50),
 
             /// #### Start Conversation Button
             Container(
@@ -83,15 +84,10 @@ class StartPage extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Image.asset(
-                      'assets/icons/chat.png',
-                      width: 20,
-                      height: 20,
-                      color: Colors.white,
-                    ),
+                    Icon(Icons.chat, color: Colors.white, size: 20),
                     const SizedBox(width: 10),
                     Text(
-                      'Start Conversation',
+                      'Typing Chat',
                       style: TextStyle(fontSize: 20, color: Colors.white),
                     ),
                   ],
@@ -99,8 +95,48 @@ class StartPage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
 
+            // video chat
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(50),
+                gradient: LinearGradient(
+                  colors: [
+                    const Color.fromARGB(255, 16, 103, 252),
+                    const Color.fromARGB(255, 20, 173, 244),
+                  ],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                ),
+              ),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  minimumSize: Size(300, 70),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => VideoChatPage()),
+                  );
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.sign_language, color: Colors.white, size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Sign Language Chat',
+                      style: TextStyle(fontSize: 20, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
             /// #### Subtext
             Text(
               'Begin a communication session',
@@ -108,7 +144,7 @@ class StartPage extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
 
-            const SizedBox(height: 80),
+            const SizedBox(height: 60),
 
             /// #### Features Row
             Row(

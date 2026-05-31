@@ -1,15 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:the_silent_voice/pages/history_page.dart';
 import 'package:the_silent_voice/pages/profile_page.dart';
 import 'package:the_silent_voice/pages/start_page.dart';
+import 'package:the_silent_voice/services/history_service.dart';
 import 'package:the_silent_voice/sign/user_cache.dart';
 
 /// ## navigation bar class
 ///
-/// - the implemntation for navigation bar
-/// - provide us with a way to move between 3 diffrent pages
+/// - the implementation for navigation bar
+/// - provide us with a way to move between 3 different pages
 /// - `History Page`, `Start Page`, `Profile Page`
 
 class HomePage extends StatefulWidget {
@@ -23,7 +25,7 @@ class HomePage extends StatefulWidget {
 /// - we use the variable `selectPage` to move between the page in the navigation bar
 ///
 /// - `History Page` : set to `0`
-/// - `Start Page`   : set to `1` (the defualt valus)
+/// - `Start Page`   : set to `1` (the default values)
 /// - `Profile Page` : set to '2'
 
 class _HomePageState extends State<HomePage> {
@@ -47,6 +49,10 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     getData();
+    // Load the history when the page opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ConversationHistoryService>().loadSessions();
+    });
   }
 
   // List<Widget> pages = [HistoryPage(), StartPage(), ProfilePage()];

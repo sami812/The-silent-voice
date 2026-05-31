@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:the_silent_voice/components/chat_message.dart';
+import 'package:the_silent_voice/services/history_service.dart';
+import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/tts_service.dart';
+import 'package:the_silent_voice/services/ai_service.dart';
 
-/// ### Component 2: list of responce suggesiton
+/// ### Component 2: list of response suggestion
 ///
-/// - an empty space in the screan
+/// - an empty space in the screen
 /// - it take it input from an AI agent to create suggestion
-/// - you get 1 or more suggestion bassed on the context
-/// - the suggestion is in the shape of a speach bubble
-/// - you can tap the bubble to send the conntent to a text-to-speach model
+/// - you get 1 or more suggestion based on the context
+/// - the suggestion is in the shape of a speech bubble
+/// - you can tap the bubble to send the content to a text-to-speech model
 /// - you can continue the tap to go into an edit mode for the text
 /// - in the edit mode you open the keyboard to manually edit the text
 ///
@@ -23,35 +27,60 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
   String? editingResponse;
   final TextEditingController _editController = TextEditingController();
 
-  // just for testing
-  final List<String> suggestions = [
-    'suggestion number 1',
-    'suggestion number 2',
-    'suggestion number 3',
-    'suggestion number 4',
-    //'suggestion number 5',
-    //'suggestion number 6',
-    //'suggestion number 7',
-    //'suggestion number 8',
-    //'suggestion number 9',
-    //'long suggestion ..........................................................................................',
-  ];
+  List<String> suggestions = [];
+  bool _isLoading = false;
+  late SttService stt;
+
+  @override
+  void initState() {
+    super.initState();
+    stt = context.read<SttService>();
+    stt.addListener(_onSttChanged);
+  }
+
+  /// called whenever STT text changes
+  void _onSttChanged() {
+    final stt = context.read<SttService>();
+    final text = stt.currentText.isNotEmpty
+        ? stt.currentText
+        : stt.conversationHistory.isNotEmpty
+        ? stt.conversationHistory.last.text
+        : '';
+    if (text.isNotEmpty) {
+      _updateSuggestions(text);
+    }
+  }
+
+  /// fetch AI suggestions based on what the hearing person said
+  Future<void> _updateSuggestions(String heardText) async {
+    setState(() => _isLoading = true);
+
+    // extract just the text from ChatMessage objects
+    final history = context
+        .read<SttService>()
+        .conversationHistory
+        .where((msg) => msg.sender == MessageSender.other)
+        .map((msg) => msg.text)
+        .toList();
+
+    final results = await AiService.getSuggestions(heardText, history: history);
+
+    setState(() {
+      suggestions = results;
+      _isLoading = false;
+    });
+  }
 
   void _handleTap(String response) {
+    final message = ChatMessage(
+      text: response,
+      sender: MessageSender.me,
+      time: DateTime.now(),
+    );
+    context.read<SttService>().addMyMessage(message);
+    context.read<ConversationHistoryService>().addMessage(message);
     context.read<TtsService>().speak(response);
   }
-  // placeholder function (can be removed now)
-  // void _handleTap(String response) {
-  //    // Send to text-to-speech model (send to the terminal for now)
-  //    print('Sending to TTS: $response');
-  //    ScaffoldMessenger.of(context).showSnackBar(
-  //      SnackBar(
-  //        // well be piped to the tts model
-  //        content: Text('Speaking: $response'),
-  //        duration: Duration(seconds: 1),
-  //      ),
-  //    );
-  //  }
 
   void _handleLongPress(String response) {
     setState(() {
@@ -73,16 +102,10 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
       _closeEdit();
     }
   }
-  // placeholder function (can be removed now)
-  //  void _sendEditedResponse() {
-  //    if (_editController.text.isNotEmpty) {
-  //      _handleTap(_editController.text);
-  //      _closeEdit();
-  //    }
-  //  }
 
   @override
   void dispose() {
+    stt.removeListener(_onSttChanged);
     _editController.dispose();
     super.dispose();
   }
@@ -190,6 +213,25 @@ class _ResponseSuggestionState extends State<ResponseSuggestion> {
     /// #### Suggestion list
     /// - give a list of all the suggestion
     /// - allow you to read and interact with the suggestion
+
+    // loading state
+    if (_isLoading) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.secondary,
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Generating suggestions...',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),

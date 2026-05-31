@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:the_silent_voice/main.dart';
+import 'package:the_silent_voice/pages/information_page.dart';
+import 'package:the_silent_voice/pages/language_page.dart';
+import 'package:the_silent_voice/pages/privacy_page.dart';
 import 'package:the_silent_voice/sign/upload_to_cloudinary.dart';
 import 'package:the_silent_voice/sign/user_cache.dart';
 import 'package:the_silent_voice/services/utils.dart';
@@ -48,7 +51,7 @@ class NoSelectionControls extends TextSelectionControls {
 }
 
 /// # Profile Page
-/// `Profilepage` allows the user to view and edit their profile information,
+/// `ProfilePage` allows the user to view and edit their profile information,
 /// including name and email. It also provides appearance settings (Dark/Light mode),
 /// preferences, privacy/security, and app information.
 /// - Editable text fields use `NoSelectionControls` to remove cursor underline and handles.
@@ -59,8 +62,8 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-/// ## _ProfilepageState
-/// State class for `Profilepage`. Handles editing of user info, image picking (camera/gallery), theme switching,and taps on settings/preferences.
+/// ## _ProfilePageState
+/// State class for `ProfilePage`. Handles editing of user info, image picking (camera/gallery), theme switching,and taps on settings/preferences.
 
 class _ProfilePageState extends State<ProfilePage> {
   /// ### User Profile Image
@@ -198,9 +201,6 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     /// ### Check Theme Mode
     final switched = Theme.of(context).brightness == Brightness.dark;
-    if (isloading) {
-      return Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
     return Scaffold(
       /// ### Body ListView
       /// Scrollable page containing profile sections
@@ -451,30 +451,30 @@ class _ProfilePageState extends State<ProfilePage> {
                 Divider(),
 
                 /// #### Notifications Row
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 5),
-                  child: InkWell(
-                    splashColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    hoverColor: Colors.transparent,
-                    focusColor: Colors.transparent,
-                    onTap: () {},
-                    child: Row(
-                      children: [
-                        Icon(Icons.notifications_none),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Notifications',
-                            style: Theme.of(context).textTheme.displaySmall,
-                          ),
-                        ),
-                        Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
-                      ],
-                    ),
-                  ),
-                ),
-                Divider(),
+                // Padding(
+                //   padding: const EdgeInsets.fromLTRB(10, 10, 10, 5),
+                //   child: InkWell(
+                //     splashColor: Colors.transparent,
+                //     highlightColor: Colors.transparent,
+                //     hoverColor: Colors.transparent,
+                //     focusColor: Colors.transparent,
+                //     onTap: () {},
+                //     child: Row(
+                //       children: [
+                //         Icon(Icons.notifications_none),
+                //         const SizedBox(width: 8),
+                //         Expanded(
+                //           child: Text(
+                //             'Notifications',
+                //             style: Theme.of(context).textTheme.displaySmall,
+                //           ),
+                //         ),
+                //         Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
+                //       ],
+                //     ),
+                //   ),
+                // ),
+                // Divider(),
 
                 /// #### Language Row
                 Padding(
@@ -484,7 +484,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     highlightColor: Colors.transparent,
                     hoverColor: Colors.transparent,
                     focusColor: Colors.transparent,
-                    onTap: () {},
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguagePage())),
                     child: Row(
                       children: [
                         Icon(Icons.language_outlined),
@@ -525,7 +525,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     highlightColor: Colors.transparent,
                     hoverColor: Colors.transparent,
                     focusColor: Colors.transparent,
-                    onTap: () {},
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPage())),
                     child: Row(
                       children: [
                         Icon(Icons.privacy_tip_outlined),
@@ -566,7 +566,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     highlightColor: Colors.transparent,
                     hoverColor: Colors.transparent,
                     focusColor: Colors.transparent,
-                    onTap: () {},
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AppInfoPage())),
                     child: Row(
                       children: [
                         Icon(Icons.info_outline_rounded),

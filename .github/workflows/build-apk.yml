@@ -1,0 +1,66 @@
+name: Build Flutter APK
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: |
+          cd app/The_Silent_Voice
+          flutter pub get
+
+      - name: Fix tflite_v2 Namespace
+        run: |
+          PUB_CACHE_DIR="$HOME/.pub-cache/hosted/pub.dev"
+          TFLITE_DIR=$(ls -d $PUB_CACHE_DIR/tflite_v2-* 2>/dev/null | head -n 1)
+          if [ -d "$TFLITE_DIR" ]; then
+            echo "Fixing namespace in $TFLITE_DIR/android/build.gradle"
+            sed -i '/android {/a \    namespace "com.shuttlerock.tflitev2"' $TFLITE_DIR/android/build.gradle
+          else
+            echo "tflite_v2 directory not found in hosted cache, checking alternative paths..."
+            ALTERNATIVE_DIR=$(find $HOME/.pub-cache -type d -name "tflite_v2-*" | head -n 1)
+            if [ -n "$ALTERNATIVE_DIR" ]; then
+              echo "Fixing namespace in $ALTERNATIVE_DIR/android/build.gradle"
+              sed -i '/android {/a \    namespace "com.shuttlerock.tflitev2"' $ALTERNATIVE_DIR/android/build.gradle
+            fi
+          fi
+
+      - name: Accept All Android & NDK Licenses 🟢
+        run: |
+          mkdir -p $ANDROID_HOME/licenses
+          echo -e "\n893acbc1fe22ec755de66e9d36151830e114179e\n45f2d1d05b14070c862c4cf42861a47814b1840b\n33b6a2b64607f11b759f320ef9dff4ae5c47b974\n24333f1a50b68cc3d51f42652e77b301218f10b3\n84831b9409646a918e30573bab4c9c91346d8abd\n504667f4c0de7af1a06de9f4b1727b84351f2910\n19157841822469a4e0f4c3dd2d36d41ef51701bc" | tee $ANDROID_HOME/licenses/android-sdk-license > /dev/null
+          yes | sdkmanager --licenses || true
+
+      - name: Build APK
+        run: |
+          cd app/The_Silent_Voice
+          flutter build apk --debug --android-skip-build-dependency-validation
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/The_Silent_Voice/build/app/outputs/flutter-apk/app-debug.apk
