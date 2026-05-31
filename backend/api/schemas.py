@@ -1,23 +1,20 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 
 class SignRequest(BaseModel):
-    """Payload received from the Flutter app containing detected sign words."""
-    words: List[str] = Field(
-        ..., 
-        description="A list of disconnected English words detected from sign language"
-    )
+    words: List[str] = Field(..., description="List of disconnected English words detected from sign language")
+    location: Optional[str] = Field(default=None, description="Optional location context (e.g., Pharmacy, Street)")
 
 class SignResponse(BaseModel):
-    """Payload sent back to the app with the translation and suggestions."""
     translated_text: str
     suggested_replies: List[str]
     context_type: str 
+    is_emergency: bool = Field(default=False, description="Flag for emergency or dangerous situations")
+    whatsapp_msg: str = Field(default="", description="Ready-to-send Arabic distress message")
 
 class TextRequest(BaseModel):
-    """Payload received when a hearing person sends a text/voice message."""
-    text: str = Field(..., description="The sentence spoken by the hearing person")
+    text: str = Field(..., description="Sentence spoken by the hearing person")
+    location: Optional[str] = Field(default=None, description="Optional location context")
 
 class TextResponse(BaseModel):
-    """Payload containing suggested replies for the deaf person."""
     suggested_replies: List[str]
