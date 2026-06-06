@@ -53,9 +53,10 @@ jobs:
 
       - name: Install Android SDK Platform 31
         run: |
-          sdkmanager "platforms;android-31"
-          sdkmanager "build-tools;31.0.0"
-
+          SDKMANAGER=$(find $ANDROID_HOME -name "sdkmanager" | head -n 1)
+          echo "Found sdkmanager at: $SDKMANAGER"
+          $SDKMANAGER "platforms;android-31"
+          $SDKMANAGER "build-tools;31.0.0"
       - name: Accept Android licenses again
         run: yes | sdkmanager --licenses
 
