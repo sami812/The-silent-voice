@@ -1,13 +1,14 @@
-import 'dart:typed_data';
+import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:provider/provider.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:the_silent_voice/components/chat_message.dart';
 import 'package:the_silent_voice/components/live_subtitle_window.dart';
 import 'package:the_silent_voice/services/history_service.dart';
 import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/tts_service.dart';
-import 'package:google_mlkit_commons/google_mlkit_commons.dart';
 
 class VideoChatPage extends StatefulWidget {
   const VideoChatPage({super.key});
@@ -18,6 +19,8 @@ class VideoChatPage extends StatefulWidget {
 
 class _VideoChatPageState extends State<VideoChatPage> {
   CameraController? cameraController;
+  Interpreter? interpreter;
+  List<String> labels = [];
   bool isCameraReady = false;
   bool isCameraOn = true;
   bool isAnalyzing = false;
@@ -38,13 +41,16 @@ class _VideoChatPageState extends State<VideoChatPage> {
 
   Future<void> _loadModel() async {
     try {
-      String? res = await Tflite.loadModel(
-        model: "assets/model/model.tflite",
-        labels: "assets/model/labels.txt",
-        numThreads: 1,
-        isAsset: true,
-      );
-      debugPrint("Model loaded successfully: $res");
+      interpreter = await Interpreter.fromAsset('assets/model/model.tflite');
+
+      final raw = await DefaultAssetBundle.of(
+        context,
+      ).loadString('assets/model/labels.txt');
+      labels = raw
+          .split('\n')
+          .map((l) => l.trim())
+          .where((l) => l.isNotEmpty)
+          .toList();
     } catch (e) {
       debugPrint("Failed to load model: $e");
     }
@@ -53,7 +59,7 @@ class _VideoChatPageState extends State<VideoChatPage> {
   @override
   void dispose() {
     cameraController?.dispose();
-    Tflite.close();
+    interpreter?.close();
     super.dispose();
   }
 
@@ -96,58 +102,87 @@ class _VideoChatPageState extends State<VideoChatPage> {
     setState(() => isCameraOn = !isCameraOn);
   }
 
-  // الـ Pipeline المعدل والمستقر لملء المصفوفة الـ 1024 مباشرة
   Future<void> captureAndTranslate() async {
     if (!isCameraReady || !isCameraOn || isAnalyzing) return;
+
     setState(() => isAnalyzing = true);
 
     try {
       final XFile frame = await cameraController!.takePicture();
 
-      // معدل: نمرر الفريم مباشرة للـ Binary Pipeline المتوافق مع الـ ML Kit المستقرة
-      List<double> modelInput = List<double>.filled(1024, 0.0);
-      String result = "No Sign Detected";
+      final bytes = await File(frame.path).readAsBytes();
+      final img.Image? decoded = img.decodeImage(bytes);
 
-      // هنا يتم محاكاة ملء المصفوفة بناءً على الفريم المستقر لتجنب مشاكل كراش الـ NDK
-      var recognitions = await Tflite.runModelOnBinary(
-        binary: _convertListToBytes(modelInput),
-        numResults: 1,
-        threshold: 0.2,
-      );
+      if (decoded == null) throw Exception("decode failed");
 
-      if (recognitions != null && recognitions.isNotEmpty) {
-        result = recognitions[0]['label'].toString().toUpperCase();
-      } else {
-        result = "Unknown Sign";
+      const int featureSize = 136;
+
+      final img.Image resized = img.copyResize(decoded, width: 8, height: 17);
+
+      List<double> input = [];
+
+      for (int y = 0; y < resized.height; y++) {
+        for (int x = 0; x < resized.width; x++) {
+          final p = resized.getPixel(x, y);
+
+          double gray = (p.r + p.g + p.b) / 3.0;
+
+          input.add((gray - 127.5) / 127.5);
+        }
       }
 
+      if (input.length != featureSize) {
+        input = List<double>.filled(featureSize, 0.0);
+      }
+
+      final inputTensor = [input];
+
+      final outputShape = interpreter!.getOutputTensor(0).shape;
+      final output = List.generate(
+        outputShape[0],
+        (_) => List.filled(outputShape[1], 0.0),
+      );
+
+      interpreter!.run(inputTensor, output);
+      debugPrint("RAW OUTPUT: $output");
+      debugPrint("SCORES: ${output[0]}");
+
+      final List<double> scores = List<double>.from(output[0]);
+
+      int bestIndex = 0;
+      double bestScore = scores[0];
+
+      for (int i = 1; i < scores.length; i++) {
+        if (scores[i] > bestScore) {
+          bestScore = scores[i];
+          bestIndex = i;
+        }
+      }
+
+      final result = (bestIndex < labels.length)
+          ? labels[bestIndex]
+          : "Unknown";
+      debugPrint("PREDICTED LABEL: ${labels[bestIndex]}");
       setState(() {
-        isAnalyzing = false;
         signTranslation = result;
+        isAnalyzing = false;
       });
 
       if (mounted) {
-        final msg = ChatMessage(
-          text: result,
-          sender: MessageSender.me,
-          time: DateTime.now(),
+        context.read<ConversationHistoryService>().addMessage(
+          ChatMessage(
+            text: result,
+            sender: MessageSender.me,
+            time: DateTime.now(),
+          ),
         );
-        context.read<ConversationHistoryService>().addMessage(msg);
-      }
-      if (mounted) await context.read<TtsService>().speak(result);
-    } catch (e) {
-      setState(() => isAnalyzing = false);
-      debugPrint('Inference Error: $e');
-      showError('Error While Analyzing Sign');
-    }
-  }
 
-  Uint8List _convertListToBytes(List<double> list) {
-    var buffer = Float32List(list.length);
-    for (int i = 0; i < list.length; i++) {
-      buffer[i] = list[i];
+        await context.read<TtsService>().speak(result);
+      }
+    } catch (e) {
+      debugPrint("Inference error: $e");
+      setState(() => isAnalyzing = false);
     }
-    return buffer.buffer.asUint8List();
   }
 
   void showError(String msg) {
@@ -161,7 +196,7 @@ class _VideoChatPageState extends State<VideoChatPage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         FocusManager.instance.primaryFocus?.unfocus();
         await context.read<ConversationHistoryService>().endSession();
@@ -321,7 +356,7 @@ class _CameraToggleButton extends StatelessWidget {
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isCameraOn ? Colors.black54 : Colors.red.withOpacity(0.85),
+          color: isCameraOn ? Colors.black54 : Colors.red.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(50),
         ),
         child: Row(
@@ -372,7 +407,7 @@ class _GradientButton extends StatelessWidget {
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
               ),
-        color: disabled ? Colors.grey.withOpacity(0.2) : null,
+        color: disabled ? Colors.grey.withValues(alpha: 0.2) : null,
       ),
       child: ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
@@ -416,9 +451,9 @@ class _ResultTile extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.07),
+        color: accentColor.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accentColor.withOpacity(0.25)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,7 +466,7 @@ class _ResultTile extends StatelessWidget {
               ).textTheme.bodyMedium?.copyWith(height: 1.5),
             ),
           ),
-          if (trailing != null) trailing!,
+          // if (trailing != null) trailing!,
         ],
       ),
     );

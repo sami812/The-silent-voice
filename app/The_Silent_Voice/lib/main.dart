@@ -26,7 +26,6 @@ void main() async {
   await dotenv.load(fileName: '.env');
   // fire base only initilized if platform is Android or IOS
   if (Platform.isAndroid || Platform.isIOS) {
-    WidgetsFlutterBinding.ensureInitialized();
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
