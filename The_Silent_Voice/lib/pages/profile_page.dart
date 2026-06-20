@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:the_silent_voice/main.dart';
 import 'package:the_silent_voice/pages/information_page.dart';
 import 'package:the_silent_voice/pages/language_page.dart';
+import 'package:the_silent_voice/pages/personal_info_page.dart';
 import 'package:the_silent_voice/pages/privacy_page.dart';
 import 'package:the_silent_voice/sign/upload_to_cloudinary.dart';
 import 'package:the_silent_voice/sign/user_cache.dart';
@@ -478,7 +479,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 /// #### Language Row
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 4),
                   child: InkWell(
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
@@ -492,6 +493,35 @@ class _ProfilePageState extends State<ProfilePage> {
                         Expanded(
                           child: Text(
                             'Language',
+                            style: Theme.of(context).textTheme.displaySmall,
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
+                      ],
+                    ),
+                  ),
+                ),
+                Divider(),
+
+                /// #### Personal Info Row
+                /// Lets the user save name/pronouns/phone/address so the
+                /// AI suggestion service can reference them via
+                /// placeholders instead of guessing personal info.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                  child: InkWell(
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    hoverColor: Colors.transparent,
+                    focusColor: Colors.transparent,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalInfoPage())),
+                    child: Row(
+                      children: [
+                        Icon(Icons.badge_outlined),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Personal Info',
                             style: Theme.of(context).textTheme.displaySmall,
                           ),
                         ),
