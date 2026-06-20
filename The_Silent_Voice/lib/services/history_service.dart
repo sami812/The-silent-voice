@@ -56,6 +56,28 @@ class ConversationHistoryService extends ChangeNotifier {
     }
   }
 
+  /// Deletes a single conversation session, both from Firestore and the
+  /// local in-memory list. Safe to call even if the session was already
+  /// removed locally (e.g. double-tap) - just no-ops on the local side.
+  Future<void> deleteSession(String sessionId) async {
+    await _conversationsRef.doc(sessionId).delete();
+    sessions.removeWhere((s) => s.id == sessionId);
+    notifyListeners();
+  }
+
+  /// Deletes every saved conversation for the current user.
+  /// Uses a batched write so it's a single round-trip instead of N deletes.
+  Future<void> deleteAllSessions() async {
+    if (sessions.isEmpty) return;
+    final batch = db.batch();
+    for (final session in sessions) {
+      batch.delete(_conversationsRef.doc(session.id));
+    }
+    await batch.commit();
+    sessions.clear();
+    notifyListeners();
+  }
+
   Future<void> loadSessions() async {
     // Don't reload if already loaded
     if (sessions.isNotEmpty) return;
@@ -77,16 +99,16 @@ class ConversationHistoryService extends ChangeNotifier {
   Future<void> refreshSessions() async {
     isLoading = true;
     notifyListeners();
- 
+
     final snapshot = await _conversationsRef
         .orderBy('startTime', descending: true)
         .get();
- 
+
     sessions = snapshot.docs
         .map((doc) =>
             ConversationSession.fromJson(doc.data() as Map<String, dynamic>))
         .toList();
- 
+
     isLoading = false;
     notifyListeners();
   }

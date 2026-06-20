@@ -35,7 +35,7 @@ void main() async {
   //  WidgetsFlutterBinding.ensureInitialized();
   //  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final prefs = await SharedPreferences.getInstance();
-  final switched = prefs.getBool('isDarkMode') ?? false;
+  final switched = prefs.getBool('isDarkMode') ?? true;
   runApp(TheSilentVoice(switched: switched));
 }
 

@@ -14,14 +14,6 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     context.read<ConversationHistoryService>().loadSessions();
-  //   });
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,12 +35,21 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ),
         actions: [
-          // Refresh if needed
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
             onPressed: () {
               context.read<ConversationHistoryService>().refreshSessions();
+            },
+          ),
+          Consumer<ConversationHistoryService>(
+            builder: (context, historyService, child) {
+              if (historyService.sessions.isEmpty) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.delete_sweep_outlined),
+                tooltip: 'Delete all',
+                onPressed: () => _confirmDeleteAll(context),
+              );
             },
           ),
         ],
@@ -104,29 +105,57 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget _buildSessionCard(BuildContext context, ConversationSession session) {
     final totalMessages = session.messages.length;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => _showSessionDetails(context, session),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (session.personName.isNotEmpty) ...[
+    return Dismissible(
+      key: ValueKey(session.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: const Icon(Icons.delete_outline, color: Colors.white),
+      ),
+      confirmDismiss: (_) => _confirmDeleteSession(context, session),
+      onDismissed: (_) {
+        context.read<ConversationHistoryService>().deleteSession(session.id);
+      },
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _showSessionDetails(context, session),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
                   children: [
-                    Icon(Icons.person, size: 16, color: Colors.black),
-                    const SizedBox(width: 6),
-                    Text(
-                      session.personName,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color.fromARGB(255, 92, 91, 91),
+                    if (session.personName.isNotEmpty) ...[
+                      Icon(Icons.person, size: 16, color: Colors.black),
+                      const SizedBox(width: 6),
+                      Text(
+                        session.personName,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: const Color.fromARGB(255, 92, 91, 91),
+                        ),
                       ),
-                    ),
+                    ] else ...[
+                      Icon(Icons.person_outline, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Unknown',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[400],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                     const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -153,76 +182,45 @@ class _HistoryPageState extends State<HistoryPage> {
                         ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ] else ...[
-                Row(
-                  children: [
-                    Icon(Icons.person_outline, size: 16, color:Colors.grey[600]),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Unknown',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color:Colors.grey[400],
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.chat_bubble_outline,
-                            size: 12,
-                            color: Theme.of(context).colorScheme.onSecondaryContainer,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$totalMessages msgs',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSecondaryContainer,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 20),
+                      color: Colors.grey,
+                      tooltip: 'Delete conversation',
+                      onPressed: () async {
+                        final confirmed = await _confirmDeleteSession(context, session);
+                        if (confirmed == true && context.mounted) {
+                          context.read<ConversationHistoryService>().deleteSession(session.id);
+                        }
+                      },
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-              ],
-
-              Divider(),
-              if (session.messages.isNotEmpty) ...[
-                Text(
-                  session.messages.first.text,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 10),
-              ],
-
-              Row(
-                children: [
-                  _buildStat(context, Icons.mic, '${session.transcript.length} lines'),
-                  const SizedBox(width: 16),
-                  if (session.myMessages.isNotEmpty)
-                    _buildStat(
-                      context,
-                      Icons.reply,
-                      '${session.myMessages.length} replies',
-                    ),
+                Divider(),
+                if (session.messages.isNotEmpty) ...[
+                  Text(
+                    session.messages.first.text,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 10),
                 ],
-              ),
-            ],
+                Row(
+                  children: [
+                    _buildStat(context, Icons.mic, '${session.transcript.length} lines'),
+                    const SizedBox(width: 16),
+                    if (session.myMessages.isNotEmpty)
+                      _buildStat(
+                        context,
+                        Icons.reply,
+                        '${session.myMessages.length} replies',
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -234,15 +232,87 @@ class _HistoryPageState extends State<HistoryPage> {
     final grayColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
     return Row(
       children: [
-        Icon(icon, size: 14, color:grayColor),
+        Icon(icon, size: 14, color: grayColor),
         const SizedBox(width: 4),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: grayColor,
-          ),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: grayColor),
         ),
       ],
+    );
+  }
+
+  /// Shows a confirmation dialog before deleting a single session.
+  /// Returns true if the user confirmed, false/null otherwise.
+  Future<bool?> _confirmDeleteSession(BuildContext context, ConversationSession session) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Delete conversation?', style: Theme.of(context).textTheme.titleMedium),
+        content: Text(
+          session.personName.isNotEmpty
+              ? 'This will permanently delete your conversation with ${session.personName}.'
+              : 'This will permanently delete this conversation.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text('Cancel', style: Theme.of(context).textTheme.bodyMedium),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Shows a confirmation dialog before deleting ALL sessions.
+  void _confirmDeleteAll(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Delete all conversations?', style: Theme.of(context).textTheme.titleMedium),
+        content: Text(
+          'This will permanently delete all of your saved conversations. This cannot be undone.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text('Cancel', style: Theme.of(context).textTheme.bodyMedium),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await context.read<ConversationHistoryService>().deleteAllSessions();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('All conversations deleted'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Delete All', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -360,6 +430,17 @@ class _HistoryPageState extends State<HistoryPage> {
                       icon: const Icon(Icons.edit_outlined),
                       tooltip: 'Edit name',
                       onPressed: () => _editPersonName(context, session),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Delete conversation',
+                      onPressed: () async {
+                        final confirmed = await _confirmDeleteSession(context, session);
+                        if (confirmed == true && context.mounted) {
+                          await context.read<ConversationHistoryService>().deleteSession(session.id);
+                          if (context.mounted) Navigator.pop(context);
+                        }
+                      },
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),

@@ -198,7 +198,7 @@ class _LoginPageState extends State<LoginPage> {
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          Container(color: Colors.white),
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
           ClipPath(
             clipper: WaveClipper(),
             child: Container(color: Colors.blue, height: 300),
