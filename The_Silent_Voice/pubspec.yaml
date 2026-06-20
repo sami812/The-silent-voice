@@ -30,8 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  tflite_flutter: ^0.11.0
-  image: ^4.2.0
   speech_to_text: ^7.3.0
   # https://pub.dev/packages/speech_to_text
   flutter_tts: ^4.2.5
@@ -89,8 +87,6 @@ flutter:
   assets:
     - assets/icons/
     - .env
-    - assets/model/model.tflite  #موديل الاشارة
-    - assets/model/labels.txt    # اسماءالاشارات  
     # chat.png
     # - assets/icons/note.png
     # - assets/icons/microphone.png

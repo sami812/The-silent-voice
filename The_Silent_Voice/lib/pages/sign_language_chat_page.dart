@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
 import 'package:provider/provider.dart';
-import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:the_silent_voice/components/chat_message.dart';
 import 'package:the_silent_voice/components/live_subtitle_window.dart';
 import 'package:the_silent_voice/services/history_service.dart';
+import 'package:the_silent_voice/services/sign_language_service.dart';
 import 'package:the_silent_voice/services/stt_service.dart';
 import 'package:the_silent_voice/services/tts_service.dart';
 
@@ -19,47 +18,28 @@ class VideoChatPage extends StatefulWidget {
 
 class _VideoChatPageState extends State<VideoChatPage> {
   CameraController? cameraController;
-  Interpreter? interpreter;
-  List<String> labels = [];
   bool isCameraReady = false;
   bool isCameraOn = true;
   bool isAnalyzing = false;
   String signTranslation = '';
   static const Color blue = Color(0xFF1067FC);
 
+  // burst capture settings - more frames = better motion context,
+  // but slower + more data sent per request. 4 frames @ 200ms is a
+  // reasonable balance for catching simple sign motion.
+  static const int _burstFrameCount = 4;
+  static const Duration _burstFrameDelay = Duration(milliseconds: 200);
+
   @override
   void initState() {
     super.initState();
-    initProject();
+    initCamera();
     context.read<ConversationHistoryService>().startSession();
-  }
-
-  Future<void> initProject() async {
-    await _loadModel();
-    await initCamera();
-  }
-
-  Future<void> _loadModel() async {
-    try {
-      interpreter = await Interpreter.fromAsset('assets/model/model.tflite');
-
-      final raw = await DefaultAssetBundle.of(
-        context,
-      ).loadString('assets/model/labels.txt');
-      labels = raw
-          .split('\n')
-          .map((l) => l.trim())
-          .where((l) => l.isNotEmpty)
-          .toList();
-    } catch (e) {
-      debugPrint("Failed to load model: $e");
-    }
   }
 
   @override
   void dispose() {
     cameraController?.dispose();
-    interpreter?.close();
     super.dispose();
   }
 
@@ -78,7 +58,7 @@ class _VideoChatPageState extends State<VideoChatPage> {
         cam,
         ResolutionPreset.high,
         enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.yuv420,
+        imageFormatGroup: ImageFormatGroup.jpeg,
       );
 
       await cameraController!.initialize();
@@ -102,73 +82,39 @@ class _VideoChatPageState extends State<VideoChatPage> {
     setState(() => isCameraOn = !isCameraOn);
   }
 
+  /// Captures a short burst of frames (instead of a single still photo)
+  /// and sends them together to the sign language service so the model
+  /// can interpret motion, not just one static pose.
   Future<void> captureAndTranslate() async {
     if (!isCameraReady || !isCameraOn || isAnalyzing) return;
 
     setState(() => isAnalyzing = true);
 
     try {
-      final XFile frame = await cameraController!.takePicture();
+      final List<File> frames = [];
 
-      final bytes = await File(frame.path).readAsBytes();
-      final img.Image? decoded = img.decodeImage(bytes);
-
-      if (decoded == null) throw Exception("decode failed");
-
-      const int featureSize = 136;
-
-      final img.Image resized = img.copyResize(decoded, width: 8, height: 17);
-
-      List<double> input = [];
-
-      for (int y = 0; y < resized.height; y++) {
-        for (int x = 0; x < resized.width; x++) {
-          final p = resized.getPixel(x, y);
-
-          double gray = (p.r + p.g + p.b) / 3.0;
-
-          input.add((gray - 127.5) / 127.5);
+      for (int i = 0; i < _burstFrameCount; i++) {
+        final XFile shot = await cameraController!.takePicture();
+        frames.add(File(shot.path));
+        if (i < _burstFrameCount - 1) {
+          await Future.delayed(_burstFrameDelay);
         }
       }
 
-      if (input.length != featureSize) {
-        input = List<double>.filled(featureSize, 0.0);
-      }
+      final result = await SignLanguageService.translateSign(frames);
 
-      final inputTensor = [input];
-
-      final outputShape = interpreter!.getOutputTensor(0).shape;
-      final output = List.generate(
-        outputShape[0],
-        (_) => List.filled(outputShape[1], 0.0),
-      );
-
-      interpreter!.run(inputTensor, output);
-      debugPrint("RAW OUTPUT: $output");
-      debugPrint("SCORES: ${output[0]}");
-
-      final List<double> scores = List<double>.from(output[0]);
-
-      int bestIndex = 0;
-      double bestScore = scores[0];
-
-      for (int i = 1; i < scores.length; i++) {
-        if (scores[i] > bestScore) {
-          bestScore = scores[i];
-          bestIndex = i;
-        }
-      }
-
-      final result = (bestIndex < labels.length)
-          ? labels[bestIndex]
-          : "Unknown";
-      debugPrint("PREDICTED LABEL: ${labels[bestIndex]}");
+      if (!mounted) return;
       setState(() {
         signTranslation = result;
         isAnalyzing = false;
       });
 
-      if (mounted) {
+      final isUsable = result != SignLanguageService.unclearResult &&
+          result != 'Translation failed. Please try again.' &&
+          !result.startsWith('Error:') &&
+          result != 'No frames captured.';
+
+      if (isUsable) {
         context.read<ConversationHistoryService>().addMessage(
           ChatMessage(
             text: result,
@@ -180,8 +126,8 @@ class _VideoChatPageState extends State<VideoChatPage> {
         await context.read<TtsService>().speak(result);
       }
     } catch (e) {
-      debugPrint("Inference error: $e");
-      setState(() => isAnalyzing = false);
+      debugPrint("Translation error: $e");
+      if (mounted) setState(() => isAnalyzing = false);
     }
   }
 
@@ -466,7 +412,7 @@ class _ResultTile extends StatelessWidget {
               ).textTheme.bodyMedium?.copyWith(height: 1.5),
             ),
           ),
-          // if (trailing != null) trailing!,
+          if (trailing != null) trailing!,
         ],
       ),
     );
