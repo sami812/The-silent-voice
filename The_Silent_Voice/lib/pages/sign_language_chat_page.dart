@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:the_silent_voice/components/chat_message.dart';
-import 'package:the_silent_voice/components/live_subtitle_window.dart';
+import 'package:the_silent_voice/components/cv_subtitle_window.dart';
+import 'package:the_silent_voice/components/cv_utility_bar.dart';
 import 'package:the_silent_voice/services/history_service.dart';
 import 'package:the_silent_voice/services/sign_language_service.dart';
 import 'package:the_silent_voice/services/stt_service.dart';
@@ -18,52 +20,48 @@ class VideoChatPage extends StatefulWidget {
 
 class _VideoChatPageState extends State<VideoChatPage> {
   CameraController? cameraController;
+  List<CameraDescription> _availableCameras = [];
+  CameraMode _cameraMode = CameraMode.front;
   bool isCameraReady = false;
-  bool isCameraOn = true;
-  bool isAnalyzing = false;
-  String signTranslation = '';
-  static const Color blue = Color(0xFF1067FC);
 
-  // burst capture settings - more frames = better motion context,
-  // but slower + more data sent per request. 4 frames @ 200ms is a
-  // reasonable balance for catching simple sign motion.
+  bool _isTranslating = false;
+  bool isAnalyzing = false;
+  Timer? _translateLoop;
+
+  final List<ChatMessage> _translations = [];
+
+  static const Color blue = Color(0xFF1067FC);
   static const int _burstFrameCount = 4;
   static const Duration _burstFrameDelay = Duration(milliseconds: 200);
+  // how often the auto-translate loop attempts a capture while "Translating"
+  // is on. Kept a bit longer than the burst+network round trip so captures
+  // don't pile up on top of each other.
+  static const Duration _autoTranslateInterval = Duration(seconds: 1);
 
   @override
   void initState() {
     super.initState();
-    initCamera();
+    _setupCamera();
     context.read<ConversationHistoryService>().startSession();
+    _translateLoop = Timer.periodic(_autoTranslateInterval, (_) {
+      if (_isTranslating && _cameraMode != CameraMode.off && !isAnalyzing) {
+        captureAndTranslate();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _translateLoop?.cancel();
     cameraController?.dispose();
     super.dispose();
   }
 
-  Future<void> initCamera() async {
+  Future<void> _setupCamera() async {
     try {
-      WidgetsFlutterBinding.ensureInitialized();
-      final cameras = await availableCameras();
-      if (cameras.isEmpty) return;
-
-      final cam = cameras.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.front,
-        orElse: () => cameras.first,
-      );
-
-      cameraController = CameraController(
-        cam,
-        ResolutionPreset.high,
-        enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.jpeg,
-      );
-
-      await cameraController!.initialize();
-      await cameraController!.setFlashMode(FlashMode.off);
-      if (mounted) setState(() => isCameraReady = true);
+      _availableCameras = await availableCameras();
+      if (_availableCameras.isEmpty) return;
+      await _switchToMode(_cameraMode);
     } on CameraException catch (e) {
       debugPrint('Camera error: ${e.code} — ${e.description}');
       if (mounted) showError('Camera error: ${e.description ?? e.code}');
@@ -72,27 +70,78 @@ class _VideoChatPageState extends State<VideoChatPage> {
     }
   }
 
-  Future<void> toggleCamera() async {
-    if (!isCameraReady) return;
-    if (isCameraOn) {
-      await cameraController?.pausePreview();
-    } else {
-      await cameraController?.resumePreview();
+  /// Switches between front / back / off. Disposes the current controller
+  /// (if any) and initializes a fresh one for the requested camera, since
+  /// CameraController doesn't support swapping its target camera in place.
+  Future<void> _switchToMode(CameraMode mode) async {
+    final previousController = cameraController;
+    if (mounted) {
+      setState(() {
+        isCameraReady = false;
+        cameraController = null;
+      });
     }
-    setState(() => isCameraOn = !isCameraOn);
+    await previousController?.dispose();
+    // brief delay so the camera hardware is fully released before the next
+    // controller tries to claim it - switching cameras back-to-back without
+    // this can silently fail on some Android devices.
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (mode == CameraMode.off) {
+      if (mounted) setState(() => _cameraMode = mode);
+      return;
+    }
+
+    if (_availableCameras.isEmpty) {
+      _availableCameras = await availableCameras();
+      if (_availableCameras.isEmpty) return;
+    }
+
+    final targetLens =
+        mode == CameraMode.front ? CameraLensDirection.front : CameraLensDirection.back;
+    final description = _availableCameras.firstWhere(
+      (c) => c.lensDirection == targetLens,
+      orElse: () => _availableCameras.first,
+    );
+
+    try {
+      final controller = CameraController(
+        description,
+        ResolutionPreset.high,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
+      );
+      await controller.initialize();
+      await controller.setFlashMode(FlashMode.off);
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        cameraController = controller;
+        isCameraReady = true;
+        _cameraMode = mode;
+      });
+    } on CameraException catch (e) {
+      debugPrint('Camera error: ${e.code} — ${e.description}');
+      if (mounted) showError('Camera error: ${e.description ?? e.code}');
+    }
   }
 
-  /// Captures a short burst of frames (instead of a single still photo)
-  /// and sends them together to the sign language service so the model
-  /// can interpret motion, not just one static pose.
+  /// Captures a short burst of frames and sends them together so the
+  /// sign-language service can interpret motion, not just one static pose.
   Future<void> captureAndTranslate() async {
-    if (!isCameraReady || !isCameraOn || isAnalyzing) return;
+    if (cameraController == null ||
+        !isCameraReady ||
+        _cameraMode == CameraMode.off ||
+        isAnalyzing) {
+      return;
+    }
 
     setState(() => isAnalyzing = true);
 
     try {
       final List<File> frames = [];
-
       for (int i = 0; i < _burstFrameCount; i++) {
         final XFile shot = await cameraController!.takePicture();
         frames.add(File(shot.path));
@@ -104,10 +153,6 @@ class _VideoChatPageState extends State<VideoChatPage> {
       final result = await SignLanguageService.translateSign(frames);
 
       if (!mounted) return;
-      setState(() {
-        signTranslation = result;
-        isAnalyzing = false;
-      });
 
       final isUsable = result != SignLanguageService.unclearResult &&
           result != 'Translation failed. Please try again.' &&
@@ -115,18 +160,18 @@ class _VideoChatPageState extends State<VideoChatPage> {
           result != 'No frames captured.';
 
       if (isUsable) {
-        context.read<ConversationHistoryService>().addMessage(
-          ChatMessage(
-            text: result,
-            sender: MessageSender.me,
-            time: DateTime.now(),
-          ),
+        final message = ChatMessage(
+          text: result,
+          sender: MessageSender.me,
+          time: DateTime.now(),
         );
-
+        setState(() => _translations.add(message));
+        context.read<ConversationHistoryService>().addMessage(message);
         await context.read<TtsService>().speak(result);
       }
     } catch (e) {
       debugPrint("Translation error: $e");
+    } finally {
       if (mounted) setState(() => isAnalyzing = false);
     }
   }
@@ -136,6 +181,17 @@ class _VideoChatPageState extends State<VideoChatPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+  }
+
+  Future<void> _handleSave() async {
+    await context.read<ConversationHistoryService>().endSession();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Conversation saved to history'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -154,7 +210,7 @@ class _VideoChatPageState extends State<VideoChatPage> {
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: Text(
-            'Conversation',
+            'Sign Language Chat',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           centerTitle: true,
@@ -165,10 +221,12 @@ class _VideoChatPageState extends State<VideoChatPage> {
             child: Divider(height: 1),
           ),
         ),
+        // layout: camera view on top, subtitle window in the middle,
+        // utility bar pinned to the bottom.
         body: Column(
           children: [
             Expanded(
-              flex: 4,
+              flex: 5,
               child: Container(
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -180,81 +238,24 @@ class _VideoChatPageState extends State<VideoChatPage> {
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    cameraBody(),
-                    if (isAnalyzing)
-                      const ColoredBox(
-                        color: Color(0x881067FC),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(color: Colors.white),
-                              SizedBox(height: 12),
-                              Text(
-                                'Analyzing sign…',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: _CameraToggleButton(
-                        isCameraOn: isCameraOn,
-                        onTap: toggleCamera,
-                      ),
-                    ),
-                  ],
-                ),
+                child: cameraBody(),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: _GradientButton(
-                label: isAnalyzing ? 'Analyzing…' : 'Translate Sign',
-                icon: isAnalyzing
-                    ? Icons.hourglass_top_rounded
-                    : Icons.sign_language_rounded,
-                onPressed: (isAnalyzing || !isCameraReady || !isCameraOn)
-                    ? null
-                    : captureAndTranslate,
+            Expanded(
+              flex: 3,
+              child: CvSubtitleWindow(
+                translations: _translations,
+                isAnalyzing: isAnalyzing,
               ),
             ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOut,
-              child: signTranslation.isEmpty
-                  ? const SizedBox(height: 8)
-                  : _ResultTile(
-                      text: signTranslation,
-                      accentColor: blue,
-                      trailing: Consumer<TtsService>(
-                        builder: (_, tts, _) => IconButton(
-                          icon: Icon(
-                            tts.isSpeaking
-                                ? Icons.stop_circle_rounded
-                                : Icons.volume_up_rounded,
-                            size: 22,
-                          ),
-                          color: blue,
-                          onPressed: tts.isSpeaking
-                              ? () => tts.stop()
-                              : () => tts.speak(signTranslation),
-                        ),
-                      ),
-                    ),
+            const SizedBox(height: 12),
+            CvUtilityBar(
+              onSave: _handleSave,
+              isTranslating: _isTranslating,
+              onToggleTranslating: (value) => setState(() => _isTranslating = value),
+              cameraMode: _cameraMode,
+              onCameraModeChanged: _switchToMode,
             ),
-            const SizedBox(height: 8),
-            const Divider(height: 1),
-            Expanded(flex: 3, child: const LiveSubtitleWindow()),
           ],
         ),
       ),
@@ -262,13 +263,7 @@ class _VideoChatPageState extends State<VideoChatPage> {
   }
 
   Widget cameraBody() {
-    if (!isCameraReady) {
-      return const ColoredBox(
-        color: Colors.black,
-        child: Center(child: CircularProgressIndicator(color: blue)),
-      );
-    }
-    if (!isCameraOn) {
+    if (_cameraMode == CameraMode.off) {
       return const ColoredBox(
         color: Colors.black,
         child: Center(
@@ -286,135 +281,38 @@ class _VideoChatPageState extends State<VideoChatPage> {
         ),
       );
     }
-    return CameraPreview(cameraController!);
-  }
-}
+    if (!isCameraReady || cameraController == null) {
+      return const ColoredBox(
+        color: Colors.black,
+        child: Center(child: CircularProgressIndicator(color: blue)),
+      );
+    }
 
-class _CameraToggleButton extends StatelessWidget {
-  final bool isCameraOn;
-  final VoidCallback onTap;
-  const _CameraToggleButton({required this.isCameraOn, required this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isCameraOn ? Colors.black54 : Colors.red.withValues(alpha: 0.85),
-          borderRadius: BorderRadius.circular(50),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isCameraOn ? Icons.videocam_rounded : Icons.videocam_off_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              isCameraOn ? 'Camera On' : 'Camera Off',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+    final camera = cameraController!;
+
+    // "Zoom out to fit width, crop vertically" - the preview is scaled
+    // down/up so its width always matches the available width exactly
+    // (no horizontal cropping, no horizontal stretching), and whatever
+    // sticks out vertically is cropped off the top/bottom rather than
+    // trying to letterbox or squeeze the whole sensor frame in.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.center,
+            maxWidth: double.infinity,
+            maxHeight: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.fitWidth,
+              child: SizedBox(
+                width: constraints.maxWidth,
+                height: constraints.maxWidth * camera.value.aspectRatio,
+                child: CameraPreview(camera),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GradientButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback? onPressed;
-  const _GradientButton({
-    required this.label,
-    required this.icon,
-    this.onPressed,
-  });
-  @override
-  Widget build(BuildContext context) {
-    final disabled = onPressed == null;
-    return Container(
-      width: double.infinity,
-      height: 52,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(50),
-        gradient: disabled
-            ? null
-            : const LinearGradient(
-                colors: [Color(0xFF1067FC), Color(0xFF14ADF4)],
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-              ),
-        color: disabled ? Colors.grey.withValues(alpha: 0.2) : null,
-      ),
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          disabledBackgroundColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(50),
           ),
-        ),
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white, size: 20),
-        label: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ResultTile extends StatelessWidget {
-  final String text;
-  final Color accentColor;
-  final Widget? trailing;
-  const _ResultTile({
-    required this.text,
-    required this.accentColor,
-    this.trailing,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accentColor.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Text(
-              text,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(height: 1.5),
-            ),
-          ),
-          if (trailing != null) trailing!,
-        ],
-      ),
+        );
+      },
     );
   }
 }
