@@ -6,51 +6,41 @@ import 'package:the_silent_voice/services/sign_dictionary.dart';
 
 /// ## Sign Language Service
 ///
-/// - takes a short burst of frames (captured ~200ms apart) instead of a
-///   single still photo, so the model can see motion, not just a static pose
-/// - asks the vision model to classify the hand shape into 5 finger flags
-///   (extended/curled) + a motion category - NOT to guess the word itself
-/// - looks that classification up via [findClosestSign], which tolerates
-///   a single misclassified finger instead of requiring a perfect match
+/// Sends a burst of frames to the Groq vision API and asks it to classify:
+///   1. Which fingers are extended (5 binary flags)
+///   2. The hand's orientation (palm direction / blade direction)
 ///
-/// Why classify instead of translate directly: vision LLMs are much more
-/// reliable at structured classification ("is this finger up or down?")
-/// than at inventing a translation from scratch. It also means the
-/// vocabulary can grow to any size just by adding entries to
-/// sign_dictionary.dart - no prompt or code changes needed.
+/// The result is looked up in [signDictionary] via [findClosestSign],
+/// which tolerates a single misclassified finger (Hamming distance ≤ 1).
+///
+/// Orientation replaces the old "motion" system because it is a single-
+/// frame static judgment — much more reliable than asking the model to
+/// compare frames over time and decide "did the hand move upward?"
 class SignLanguageService {
   static String get _apiKey => dotenv.env['GROQ_API_KEY'] ?? '';
   static const String _url = 'https://api.groq.com/openai/v1/chat/completions';
   static const String _model = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
-  /// Standard "no clear sign" response, used so callers can detect it
-  /// without doing fragile string matching everywhere.
   static const String unclearResult = 'Unclear, please try again';
 
-  /// How many fingers' worth of misclassification to tolerate when
-  /// matching against the dictionary. 1 = forgive a single wrong finger;
-  /// 0 = require an exact match. Higher values trade accuracy for more
-  /// successful matches - 1 is a reasonable starting point.
+  /// How many fingers' worth of misclassification to tolerate.
+  /// 1 = forgive a single wrong finger; 0 = require exact match.
   static const int _matchTolerance = 1;
 
-  /// Takes a list of image frames (captured a few hundred ms apart),
-  /// classifies the hand shape + motion, and returns the matching word
-  /// from the dictionary - or [unclearResult] if no match is found.
   static Future<String> translateSign(List<File> frames) async {
     if (frames.isEmpty) return 'No frames captured.';
 
     try {
-      final motionList = signMotionCategories.join(', ');
+      final orientationList = signOrientations.join(', ');
 
       final content = <Map<String, dynamic>>[
         {
           'type': 'text',
-          'text':
-              '''You are analyzing a short sequence of ${frames.length} frames captured roughly 200ms apart, showing one hand making a sign language gesture.
+          'text': '''You are analyzing ${frames.length} frames of a hand sign captured ~200ms apart.
 
-Look across ALL the frames together to judge hand shape and movement as a whole gesture, not just the first frame.
+Look at ALL frames together to judge both hand shape and orientation.
 
-Classify the hand into exactly these 6 values and return ONLY a JSON object, nothing else - no markdown, no explanation:
+Return ONLY this JSON object — no markdown, no explanation:
 
 {
   "thumb": 0 or 1,
@@ -58,24 +48,32 @@ Classify the hand into exactly these 6 values and return ONLY a JSON object, not
   "middle": 0 or 1,
   "ring": 0 or 1,
   "pinky": 0 or 1,
-  "motion": one of [$motionList]
+  "orientation": one of [$orientationList]
 }
 
-Rules:
-- For each finger: 1 if extended/straight, 0 if curled/folded into the palm.
-- "motion" describes how the hand moved while holding that shape during the frame sequence. Use "still" if the hand shape stayed in roughly the same position the whole time.
-- Only judge motion that is visible as a 2D position change in frame (left/right/up/down/shaking back and forth). Do not try to judge movement toward or away from the camera.
-- If no hand is clearly visible in the frames, respond with {"thumb": -1, "index": -1, "middle": -1, "ring": -1, "pinky": -1, "motion": "none"}.
-- Return ONLY the JSON object. No other text.''',
+Finger rules:
+- 1 = finger is extended/straight
+- 0 = finger is curled/folded into palm
+
+Orientation rules:
+- "toward_them"  = palm facing outward (toward the camera / viewer)
+- "toward_you"   = palm facing inward (toward the signer themselves)
+- "palm_up"      = palm facing upward (toward the ceiling)
+- "palm_down"    = palm facing downward (toward the floor)
+- "side_up"      = hand held like a blade with fingers pointing upward
+- "side_forward" = hand held like a blade with fingers pointing toward the camera
+
+If no hand is visible, return: {"thumb":-1,"index":-1,"middle":-1,"ring":-1,"pinky":-1,"orientation":"none"}
+
+Return ONLY the JSON. No other text.''',
         },
       ];
 
       for (final frame in frames) {
         final bytes = await frame.readAsBytes();
-        final base64Image = base64Encode(bytes);
         content.add({
           'type': 'image_url',
-          'image_url': {'url': 'data:image/jpeg;base64,$base64Image'},
+          'image_url': {'url': 'data:image/jpeg;base64,${base64Encode(bytes)}'},
         });
       }
 
@@ -87,7 +85,7 @@ Rules:
         },
         body: jsonEncode({
           'model': _model,
-          'max_tokens': 100,
+          'max_tokens': 120,
           'temperature': 0,
           'messages': [
             {'role': 'user', 'content': content},
@@ -100,63 +98,53 @@ Rules:
       }
 
       final data = jsonDecode(response.body);
-      final rawContent = (data['choices'][0]['message']['content'] as String).trim();
+      final raw = (data['choices'][0]['message']['content'] as String).trim();
 
-      final classification = _parseClassification(rawContent);
+      final classification = _parse(raw);
       if (classification == null) return unclearResult;
 
       final word = findClosestSign(
         classification.fingers,
-        classification.motion,
+        classification.orientation,
         maxDistance: _matchTolerance,
       );
       return word ?? unclearResult;
     } catch (e) {
-      return 'Error: ${e.toString()}';
+      return 'Error: $e';
     }
   }
 
-  /// Parses the model's JSON response. Returns null if the response
-  /// couldn't be parsed, used a motion outside the known set, or the
-  /// model reported no hand visible (-1 values).
-  static _HandClassification? _parseClassification(String rawContent) {
+  static _Classification? _parse(String raw) {
     try {
-      final cleaned = rawContent
+      final cleaned = raw
           .replaceAll('```json', '')
           .replaceAll('```', '')
           .trim();
-      final Map<String, dynamic> json = jsonDecode(cleaned);
+      final json = jsonDecode(cleaned) as Map<String, dynamic>;
 
-      final thumb = json['thumb'];
-      final index = json['index'];
+      final thumb  = json['thumb'];
+      final index  = json['index'];
       final middle = json['middle'];
-      final ring = json['ring'];
-      final pinky = json['pinky'];
-      final motion = json['motion'];
+      final ring   = json['ring'];
+      final pinky  = json['pinky'];
+      final ori    = json['orientation'];
 
-      if (thumb == null ||
-          index == null ||
-          middle == null ||
-          ring == null ||
-          pinky == null ||
-          motion is! String) {
-        return null;
-      }
+      if (thumb == null || index == null || middle == null ||
+          ring == null || pinky == null || ori is! String) return null;
 
       final fingers = [thumb, index, middle, ring, pinky];
-      // -1 means the model couldn't see a hand at all
       if (fingers.any((f) => f != 0 && f != 1)) return null;
-      if (!signMotionCategories.contains(motion)) return null;
+      if (!signOrientations.contains(ori)) return null;
 
-      return _HandClassification(fingers.cast<int>(), motion);
-    } catch (e) {
+      return _Classification(fingers.cast<int>(), ori);
+    } catch (_) {
       return null;
     }
   }
 }
 
-class _HandClassification {
+class _Classification {
   final List<int> fingers;
-  final String motion;
-  _HandClassification(this.fingers, this.motion);
+  final String orientation;
+  _Classification(this.fingers, this.orientation);
 }

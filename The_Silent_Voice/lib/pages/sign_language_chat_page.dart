@@ -31,7 +31,7 @@ class _VideoChatPageState extends State<VideoChatPage> {
   final List<ChatMessage> _translations = [];
 
   static const Color blue = Color(0xFF1067FC);
-  static const int _burstFrameCount = 4;
+  static const int _burstFrameCount = 1;
   static const Duration _burstFrameDelay = Duration(milliseconds: 200);
   // how often the auto-translate loop attempts a capture while "Translating"
   // is on. Kept a bit longer than the burst+network round trip so captures
