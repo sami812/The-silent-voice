@@ -14,41 +14,41 @@ import 'package:firebase_auth/firebase_auth.dart';
 /// # NoSelectionControls
 /// Custom `TextSelectionControls` to remove any selection handles, toolbar,
 /// or indicator under the cursor. Useful for a clean minimal TextField UI.
-class NoSelectionControls extends TextSelectionControls {
-  @override
-  Widget buildHandle(
-    BuildContext context,
-    TextSelectionHandleType type,
-    double textLineHeight, [
-    VoidCallback? onTap,
-  ]) {
-    return const SizedBox.shrink();
-  }
+// class NoSelectionControls extends TextSelectionControls {
+//   @override
+//   Widget buildHandle(
+//     BuildContext context,
+//     TextSelectionHandleType type,
+//     double textLineHeight, [
+//     VoidCallback? onTap,
+//   ]) {
+//     return const SizedBox.shrink();
+//   }
 
-  @override
-  Size getHandleSize(double textLineHeight) {
-    return Size.zero;
-  }
+//   @override
+//   Size getHandleSize(double textLineHeight) {
+//     return Size.zero;
+//   }
 
-  @override
-  Offset getHandleAnchor(TextSelectionHandleType type, double textLineHeight) {
-    return Offset.zero;
-  }
+//   @override
+//   Offset getHandleAnchor(TextSelectionHandleType type, double textLineHeight) {
+//     return Offset.zero;
+//   }
 
-  @override
-  Widget buildToolbar(
-    BuildContext context,
-    Rect globalEditableRegion,
-    double toolbarHeight,
-    Offset anchorAbove,
-    List<TextSelectionPoint> endpoints,
-    TextSelectionDelegate delegate,
-    ValueListenable<ClipboardStatus>? clipboardStatus,
-    Offset? lastSecondaryTapDownPosition,
-  ) {
-    return const SizedBox.shrink();
-  }
-}
+//   @override
+//   Widget buildToolbar(
+//     BuildContext context,
+//     Rect globalEditableRegion,
+//     double toolbarHeight,
+//     Offset anchorAbove,
+//     List<TextSelectionPoint> endpoints,
+//     TextSelectionDelegate delegate,
+//     ValueListenable<ClipboardStatus>? clipboardStatus,
+//     Offset? lastSecondaryTapDownPosition,
+//   ) {
+//     return const SizedBox.shrink();
+//   }
+// }
 
 /// # Profile Page
 /// `ProfilePage` allows the user to view and edit their profile information,
@@ -289,7 +289,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           controller: userName,
                           textAlign: TextAlign.center,
                           cursorColor: Colors.black,
-                          selectionControls: NoSelectionControls(),
+                          // selectionControls: NoSelectionControls(),
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             enabledBorder: OutlineInputBorder(
@@ -323,7 +323,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           controller: userEmail,
                           textAlign: TextAlign.center,
                           cursorColor: Colors.black,
-                          selectionControls: NoSelectionControls(),
+                          //selectionControls: NoSelectionControls(),
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             enabledBorder: OutlineInputBorder(

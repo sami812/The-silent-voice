@@ -1,5 +1,4 @@
 name: Build Flutter APK
-
 on:
   push:
     branches:
@@ -7,11 +6,9 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,7 +37,7 @@ jobs:
             echo "Fixing namespace in $TFLITE_DIR/android/build.gradle"
             sed -i '/android {/a \    namespace "com.shuttlerock.tflitev2"' $TFLITE_DIR/android/build.gradle
           else
-            echo "tflite_v2 directory not found in hosted cache, checking alternative paths..."
+            echo "tflite_v2 not found, checking alternative paths..."
             ALTERNATIVE_DIR=$(find $HOME/.pub-cache -type d -name "tflite_v2-*" | head -n 1)
             if [ -n "$ALTERNATIVE_DIR" ]; then
               echo "Fixing namespace in $ALTERNATIVE_DIR/android/build.gradle"
@@ -48,11 +45,20 @@ jobs:
             fi
           fi
 
-      - name: Accept All Android & NDK Licenses 🟢
+      - name: Accept All Android Licenses
         run: |
           mkdir -p $ANDROID_HOME/licenses
           echo -e "\n893acbc1fe22ec755de66e9d36151830e114179e\n45f2d1d05b14070c862c4cf42861a47814b1840b\n33b6a2b64607f11b759f320ef9dff4ae5c47b974\n24333f1a50b68cc3d51f42652e77b301218f10b3\n84831b9409646a918e30573bab4c9c91346d8abd\n504667f4c0de7af1a06de9f4b1727b84351f2910\n19157841822469a4e0f4c3dd2d36d41ef51701bc" | tee $ANDROID_HOME/licenses/android-sdk-license > /dev/null
           yes | sdkmanager --licenses || true
+
+      - name: Install Android SDK Platform 31
+        run: |
+          SDKMANAGER=$(find $ANDROID_HOME -name "sdkmanager" | head -n 1)
+          echo "Found sdkmanager at: $SDKMANAGER"
+          $SDKMANAGER "platforms;android-31"
+          $SDKMANAGER "build-tools;31.0.0"
+      - name: Accept Android licenses again
+        run: yes | sdkmanager --licenses
 
       - name: Build APK
         run: |

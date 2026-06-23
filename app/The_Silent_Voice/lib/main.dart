@@ -19,6 +19,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// # Main page
 /// - contain all the main class `TheSilentVoice`
 /// - contain the navigation bar class  'bottomNav'
+///
 /// - SharedPreferences : saves data on the device's internal storage, so the info stays put even if the user closes the app or restarts their phone. Its allows the application to remember the user's selected theme (Light or Dark mode) even after the app is closed and reopened.
 
 void main() async {
@@ -26,7 +27,6 @@ void main() async {
   await dotenv.load(fileName: '.env');
   // fire base only initilized if platform is Android or IOS
   if (Platform.isAndroid || Platform.isIOS) {
-    WidgetsFlutterBinding.ensureInitialized();
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
