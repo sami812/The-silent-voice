@@ -18,3 +18,9 @@ class TextRequest(BaseModel):
 
 class TextResponse(BaseModel):
     suggested_replies: List[str]
+
+class SummaryRequest(BaseModel):
+    chat_history: List[str] = Field(..., description="List of previous chat messages between the deaf and hearing person")
+
+class SummaryResponse(BaseModel):
+    summary: str = Field(..., description="The AI-generated Arabic summary of the conversation")

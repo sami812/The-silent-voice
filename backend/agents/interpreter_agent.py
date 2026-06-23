@@ -2,6 +2,9 @@ import json
 import os
 import logging
 from groq import Groq
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -41,7 +44,7 @@ def translate_signs_agent(words: list, location: str = None) -> dict:
     try:
         response = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama3-70b-8192", 
+            model="llama-3.3-70b-versatile", 
             temperature=0.3,
             response_format={"type": "json_object"} 
         )
@@ -77,7 +80,7 @@ def suggest_replies_for_deaf_agent(text: str, location: str = None) -> dict:
     try:
         response = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama3-70b-8192",
+            model="llama-3.3-70b-versatile",
             temperature=0.3,
             response_format={"type": "json_object"}
         )
@@ -86,4 +89,41 @@ def suggest_replies_for_deaf_agent(text: str, location: str = None) -> dict:
         
     except Exception as e:
         logger.error(f"Error in suggest_replies_for_deaf_agent: {str(e)}")
+        raise e
+    
+def summarize_chat_agent(chat_history: list) -> dict:
+    """
+    Takes a list of previous chat messages and generates a concise Arabic summary.
+    """
+    logger.info(f"Summarizing chat history: {len(chat_history)} messages.")
+    
+    
+    formatted_history = "\n".join([f"- {msg}" for msg in chat_history])
+    
+    prompt = f"""
+    The following is a chat history between a deaf person and a hearing person:
+    {formatted_history}
+    
+    Your task:
+    Read the entire conversation and provide a brief, concise, and useful summary of the main points discussed.
+    The summary MUST be written in Arabic.
+    
+    Return the result ONLY as a valid JSON object matching this exact structure:
+    {{
+        "summary": "Your Arabic summary here"
+    }}
+    """
+    
+    try:
+        response = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama-3.3-70b-versatile", 
+            temperature=0.3, 
+            response_format={"type": "json_object"} 
+        )
+        
+        return json.loads(response.choices[0].message.content)
+        
+    except Exception as e:
+        logger.error(f"Error in summarize_chat_agent: {str(e)}")
         raise e

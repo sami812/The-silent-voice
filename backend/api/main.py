@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.schemas import SignRequest, SignResponse, TextRequest, TextResponse
-from agents.interpreter_agent import translate_signs_agent, suggest_replies_for_deaf_agent
+from api.schemas import SignRequest, SignResponse, TextRequest, TextResponse, SummaryRequest, SummaryResponse
+from agents.interpreter_agent import translate_signs_agent, suggest_replies_for_deaf_agent, summarize_chat_agent
 
 app = FastAPI(
     title="The Silent Voice API",
@@ -45,7 +45,19 @@ async def suggest_replies(request: TextRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
+@app.post("/api/summarize", response_model=SummaryResponse)
+async def summarize_chat(request: SummaryRequest):
+    try:
+        # Pass the chat history array to the summarization agent
+        result = summarize_chat_agent(chat_history=request.chat_history)
+        
+        return SummaryResponse(
+            summary=result["summary"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+    
+    
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "The Silent Voice API is running successfully."}
