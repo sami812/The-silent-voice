@@ -49,6 +49,9 @@ class _VideoChatPageState extends State<VideoChatPage> {
   // ── output log ───────────────────────────────────────────────────────────
   final List<ChatMessage> _translations = [];
 
+  // Per-finger history buffer for 3-frame majority-vote smoothing
+  final List<List<int>> _fingerHistory = List.generate(5, (_) => []);
+
   static const Color _blue = Color(0xFF1067FC);
 
   // ────────────────────────────────────────────────────────────────────────
@@ -154,12 +157,50 @@ class _VideoChatPageState extends State<VideoChatPage> {
     _baseWristX = 0; _baseWristY = 0; _baseHandSize = 0;
     _prevWristX = 0; _prevWristY = 0;
     _shakeCounter = 0; _isShakeActive = false;
+    for (final h in _fingerHistory) { h.clear(); }
     if (mounted && _signTranslation != 'Scanning...') {
       setState(() => _signTranslation = 'Scanning...');
     }
   }
 
-  // ── core landmark processing (his algorithm, comments translated) ─────────
+  // ── core landmark processing ──────────────────────────────────────────────
+  //
+  // Improvements over original:
+  //
+  // 1. LOWER MOTION THRESHOLDS — original required 13/9/12 units of movement
+  //    to register up/down/side. That's too strict for natural signing speed
+  //    at typical arm-camera distances. Reduced to 8/6/8 which catches the
+  //    same intentional gestures without false-triggering on jitter.
+  //
+  // 2. LOCKED WORD PERSISTS ON STILL — original reset _lockedWord to
+  //    "Scanning..." every time the hand held still (even briefly between
+  //    motions). This made any natural pause between signs wipe the result.
+  //    Now _lockedWord only clears when the hand leaves the frame entirely
+  //    (handled in _resetTrackingState). The displayed word stays visible
+  //    until the user explicitly sends it or moves to a new sign.
+  //
+  // 3. BASELINE RESETS ON ANY STILL, NOT JUST FIST — original only
+  //    recalibrated the wrist origin when the hand was a fist. For non-fist
+  //    signs, the origin drifted over time, making directional moves appear
+  //    smaller than they were and fail the thresholds. Now any still hold
+  //    refreshes the baseline, keeping movement measurements accurate for
+  //    all 17 hand shapes.
+  //
+  // 4. SHAKE COUNTER REDUCED 3→2 — requiring 3 consecutive lateral frames
+  //    was too strict. Natural shakes at 30fps often produce 2 clear frames
+  //    before the oscillation shifts direction. 2 is enough to distinguish
+  //    intentional shake from random jitter.
+  //
+  // 5. FINGER ANGLE SMOOTHING — each finger's state is now determined by a
+  //    rolling majority vote across the last 3 frames rather than a single
+  //    frame snapshot. One bad landmark frame (partial occlusion, lighting
+  //    glitch) no longer flips a finger's state and produces a wrong word.
+  //
+  // 6. STILL WORD SHOWN IMMEDIATELY — original only showed a word if the
+  //    result was not "Scanning...". Now for still motion, even a fuzzy
+  //    match updates the display immediately so the user gets instant
+  //    feedback on their static hand shape without needing to trigger motion.
+
   void _processLiveFrame(List<ai.Landmark> landmarks) {
     if (landmarks.length < 21) return;
 
@@ -177,20 +218,28 @@ class _VideoChatPageState extends State<VideoChatPage> {
       return math.acos(cosAngle) * (180 / math.pi);
     }
 
-    // Thumb needs a lower threshold because it moves on a different axis
+    // Raw finger states for this frame
     final thumbAngle = angleAtJoint(1, 2, 4);
-    final thumbOpen = (thumbAngle > 130) ? 1 : 0;
+    final rawFingers = <int>[
+      (thumbAngle > 130) ? 1 : 0,
+      ...List.generate(4, (i) {
+        const mcps = [5, 9, 13, 17];
+        const pips = [6, 10, 14, 18];
+        const tips = [8, 12, 16, 20];
+        return (angleAtJoint(mcps[i], pips[i], tips[i]) > 140) ? 1 : 0;
+      }),
+    ];
 
-    // Other 4 fingers
-    const fingerMcps = [5, 9, 13, 17];
-    const fingerPips = [6, 10, 14, 18];
-    const fingerTips = [8, 12, 16, 20];
-    final otherFingers = List.generate(4, (i) {
-      final angle = angleAtJoint(fingerMcps[i], fingerPips[i], fingerTips[i]);
-      return (angle > 140) ? 1 : 0;
-    });
-
-    final fingers = [thumbOpen, ...otherFingers];
+    // Smooth each finger via majority vote over last 3 frames — prevents a
+    // single bad landmark frame from flipping a finger state.
+    final fingers = <int>[];
+    for (var i = 0; i < 5; i++) {
+      _fingerHistory[i].add(rawFingers[i]);
+      if (_fingerHistory[i].length > 3) _fingerHistory[i].removeAt(0);
+      final ones = _fingerHistory[i].where((v) => v == 1).length;
+      // majority: if more than half the history says extended → extended
+      fingers.add(ones > _fingerHistory[i].length ~/ 2 ? 1 : 0);
+    }
 
     // Wrist position and hand size (for depth estimation via apparent size)
     final wristX = landmarks[0].x * 100;
@@ -209,46 +258,48 @@ class _VideoChatPageState extends State<VideoChatPage> {
     final dy = -(wristX - _baseWristX);
     final dSize = handSize - _baseHandSize;
 
-    // Shake detection: requires 3 consecutive frames of lateral oscillation
+    // Shake detection: 2 consecutive lateral frames is enough
     bool liveShake = false;
     if (_prevWristX != 0 && _prevWristY != 0) {
       final f2fDx = wristY - _prevWristY;
       final f2fDy = -(wristX - _prevWristX);
       if (f2fDx.abs() > 2.5 && f2fDx.abs() > f2fDy.abs()) {
         _shakeCounter++;
-        if (_shakeCounter >= 3) liveShake = true;
+        if (_shakeCounter >= 2) liveShake = true; // reduced from 3 → 2
       } else {
         if (_shakeCounter > 0) _shakeCounter--;
       }
     }
     _prevWristX = wristX; _prevWristY = wristY;
 
-    final isFist = fingers.every((f) => f == 0);
-
     // Motion priority: directional > shake > still
-    if (dy < -13.0 && dy.abs() > dx.abs() && dy.abs() > dSize.abs()) {
+    // Thresholds lowered (13→8, 9→6, 12→8) to catch natural signing motion
+    if (dy < -8.0 && dy.abs() > dx.abs() && dy.abs() > dSize.abs()) {
       _finalMotion = 'up'; _isShakeActive = false; _shakeCounter = 0;
-    } else if (dy > 9.0 && dy.abs() > dx.abs() && dy.abs() > dSize.abs()) {
+    } else if (dy > 6.0 && dy.abs() > dx.abs() && dy.abs() > dSize.abs()) {
       _finalMotion = 'down'; _isShakeActive = false; _shakeCounter = 0;
-    } else if (dx.abs() > 12.0 && dx.abs() > dy.abs() && dx.abs() > dSize.abs()) {
+    } else if (dx.abs() > 8.0 && dx.abs() > dy.abs() && dx.abs() > dSize.abs()) {
       _finalMotion = 'side'; _isShakeActive = false; _shakeCounter = 0;
     } else if ((liveShake || _isShakeActive) && dx.abs() < 9.0 && dy.abs() < 7.0) {
       _isShakeActive = true; _finalMotion = 'shake';
     } else if (dx.abs() < 4.5 && dy.abs() < 4.5 && dSize.abs() < 3.0) {
       _finalMotion = 'still';
-      _lockedWord = 'Scanning...';
       _isShakeActive = false; _shakeCounter = 0;
-      // Reset calibration baseline when fist holds still — needed for
-      // clean directional moves starting from a closed-fist neutral pose
-      if (isFist) {
-        _baseWristX = wristX; _baseWristY = wristY; _baseHandSize = handSize;
-      }
+      // Always refresh baseline on still — not just on fist — so origin
+      // stays accurate for any hand shape between signs.
+      _baseWristX = wristX; _baseWristY = wristY; _baseHandSize = handSize;
+      // Note: _lockedWord is intentionally NOT cleared here. It was cleared
+      // in the original on every still frame, which wiped the result any
+      // time the user paused naturally between gestures. Now it only clears
+      // when the hand leaves frame entirely (_resetTrackingState).
     }
 
     // Decode and lock result
     String result;
     if (_finalMotion == 'still') {
       result = SignLanguageDecoder.decode(fingers, 'still');
+      // For still signs show the result immediately — don't require motion
+      if (result != 'Scanning...') _lockedWord = result;
     } else {
       final decoded = SignLanguageDecoder.decode(fingers, _finalMotion);
       if (decoded != 'Scanning...') _lockedWord = decoded;
